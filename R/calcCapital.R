@@ -32,23 +32,29 @@ calcCapital <- function(subtype = "Capital") {
     #use initial gdp as in REMIND which differs from PWT 
     gdpppp_hist = calcOutput("GDPpppPast", aggregate = F)
     gdpppp= calcOutput("GDPppp", aggregate = F)    
-    gdpppp <- mselect(gdpppp, Year=paste0("y",c(2005:2150,5)))
+    gdpppp <- mselect(gdpppp, period=paste0("y",c(2005:2150,5)))
     #getNames(gdpppp) <- sub("gdp_","",getNames(gdpppp))
-    gdpppp <- mselect(gdpppp, variable = c("gdp_SSP1","gdp_SSP2","gdp_SSP3","gdp_SSP4","gdp_SSP5"))
+    my_scen <- c("gdp_SSP1", "gdp_SSP2", "gdp_SSP3", "gdp_SSP4", "gdp_SSP5", "gdp_SSP2Ariadne", 
+                 "gdp_SDP", "gdp_SDP_EI", "gdp_SDP_RC", "gdp_SDP_MC")
+    gdpppp <- mselect(gdpppp, variable = my_scen)
     
     p41 <- setYears(cap_intensity[,rep(1,32),],seq(1995,2150,5))
-    p41 <- add_dimension(p41, dim=3.1, add="ssp",nm="ssp1")
-    p41<-setNames(p41[,,rep(1,5)],c("gdp_SSP1","gdp_SSP2","gdp_SSP3","gdp_SSP4","gdp_SSP5"))
+    p41 <- add_dimension(p41, dim=3.1, add="ssp",nm=my_scen)
     cap_intensity_future <- p41
     convtime <- p41
     gdp_weight <- p41
     
     #ssp variation     
-    convtime[,,1]=150
-    convtime[,,2]=250
-    convtime[,,3]=500
-    convtime[,,4]=300
-    convtime[,,5]=150    
+    convtime[,,"gdp_SSP1"]   = 150
+    convtime[,,"gdp_SSP2"]   = 250
+    convtime[,,"gdp_SSP3"]   = 500
+    convtime[,,"gdp_SSP4"]   = 300
+    convtime[,,"gdp_SSP5"]   = 150
+    convtime[,,"gdp_SDP"]    = 150
+    convtime[,,"gdp_SDP_EI"] = 150
+    convtime[,,"gdp_SDP_RC"] = 150  
+    convtime[,,"gdp_SDP_MC"] = 150 
+    convtime[,,"gdp_SSP2Ariadne"]   = 250
     
     for (t in c("y1995","y2000","y2005")){
       cap_intensity_future[,t,] <- cap_intensity[,t,]
@@ -94,11 +100,19 @@ calcCapital <- function(subtype = "Capital") {
     
     cap_macro <- cap_macro * millionDol2trillionDol 
     
-    # add SDP scenario based on SSP1
-    cap_sdp = cap_macro[,,"gdp_SSP1"]
-    getNames(cap_sdp) =gsub("gdp_SSP1","gdp_SDP",getNames(cap_sdp))
-    cap_macro <- mbind(cap_macro,
-                       cap_sdp)
+    # add SDP scenarios based on SSP1 and SSP2Ariadne based on SSP2
+    #cap_sdp = cap_macro[,,"gdp_SSP1"]
+    #getNames(cap_sdp) =gsub("gdp_SSP1","gdp_SDP",getNames(cap_sdp))
+    #cap_sdp_EI = cap_macro[,,"gdp_SSP1"]
+    #getNames(cap_sdp_EI) =gsub("gdp_SSP1","gdp_SDP_EI",getNames(cap_sdp_EI))
+    #cap_sdp_RC = cap_macro[,,"gdp_SSP1"]
+    #getNames(cap_sdp_RC) =gsub("gdp_SSP1","gdp_SDP_RC",getNames(cap_sdp_RC))
+    #cap_sdp_MC = cap_macro[,,"gdp_SSP1"]
+    #getNames(cap_sdp_MC) =gsub("gdp_SSP1","gdp_SDP_MC",getNames(cap_sdp_MC))
+    #cap_SSP2Ariadne = cap_macro[,,"gdp_SSP2"]
+    #getNames(cap_SSP2Ariadne) =gsub("gdp_SSP2","gdp_SSP2Ariadne",getNames(cap_SSP2Ariadne))
+    #
+    #cap_macro <- mbind(cap_macro, cap_sdp, cap_sdp_EI, cap_sdp_RC, cap_sdp_MC, cap_SSP2Ariadne)
     
     # ---- add industry subsectors energy efficiency capital stocks ----
     EEK <- readSource('EDGE_Industry', 'p29_capitalQuantity_industry') %>% 
