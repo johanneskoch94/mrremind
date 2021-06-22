@@ -86,7 +86,7 @@ convertEDGE <- function(x,subtype = "FE_stationary") {
     
     #--- Load the Weights
     #--- First load the GDP data
-    wg     <- calcOutput("GDPppp", GDPpppFuture = "SSP",aggregate=F, FiveYearSteps = F)[,,]
+    wg     <- calcOutput("GDPppp", aggregate=F, FiveYearSteps = F)[,,]
     getNames(wg) <- gsub("gdp_","",getNames(wg))
     
     #--- Then load the final energy data
@@ -256,7 +256,7 @@ convertEDGE <- function(x,subtype = "FE_stationary") {
     
     x = x[,getYears(x,T)[which(getYears(x,T) <= 2100)],]
     
-    wg     <- calcOutput("GDPppp", GDPpppFuture = "SSP",aggregate=F)
+    wg     <- calcOutput("GDPppp", aggregate=F)
     wfe    <- calcOutput("FEdemand", subtype = "FE", aggregate = F)
     
     getSets(wg) = gsub("variable","scenario",getSets(wg))
@@ -308,7 +308,7 @@ convertEDGE <- function(x,subtype = "FE_stationary") {
     iso_col = which(names(mapping) == "CountryCode")
     
     select_years = intersect(getYears(x,as.integer = T),rem_years_hist)
-    wg     <- calcOutput("GDPppp", GDPpppFuture = "SSP",     years=select_years,aggregate=F)
+    wg     <- calcOutput("GDPppp", years=select_years,aggregate=F)
     getNames(wg) = gsub("gdp_SSP","SSP", getNames(wg))
     
     x = toolAggregate(x[,select_years,],mappingfile, weight = wg[,,getNames(x,dim=1)], from = region_col, to = iso_col )
