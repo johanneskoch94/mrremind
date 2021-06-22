@@ -34,11 +34,11 @@ calcCapital <- function(subtype = "Capital") {
     gdpppp= calcOutput("GDPppp", aggregate = F)    
     gdpppp <- mselect(gdpppp, Year=paste0("y",c(2005:2150,5)))
     #getNames(gdpppp) <- sub("gdp_","",getNames(gdpppp))
-    gdpppp <- mselect(gdpppp, variable = c("gdp_SSP1","gdp_SSP2","gdp_SSP3","gdp_SSP4","gdp_SSP5"))
+    gdpppp <- mselect(gdpppp, variable = c("gdp_SSP1","gdp_SSP2","gdp_SSP3","gdp_SSP4","gdp_SSP5","gdp_SSP2Ariadne"))
     
     p41 <- setYears(cap_intensity[,rep(1,32),],seq(1995,2150,5))
     p41 <- add_dimension(p41, dim=3.1, add="ssp",nm="ssp1")
-    p41<-setNames(p41[,,rep(1,5)],c("gdp_SSP1","gdp_SSP2","gdp_SSP3","gdp_SSP4","gdp_SSP5"))
+    p41<-setNames(p41[,,rep(1,5)],c("gdp_SSP1","gdp_SSP2","gdp_SSP3","gdp_SSP4","gdp_SSP5","gdp_SSP2Ariadne"))
     cap_intensity_future <- p41
     convtime <- p41
     gdp_weight <- p41

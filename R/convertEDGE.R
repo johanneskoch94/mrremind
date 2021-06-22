@@ -12,7 +12,7 @@ convertEDGE <- function(x,subtype = "FE_stationary") {
   #---- Functions -------------
   noYearDim <- function(x) setYears(x,NULL)
   addSSPname <- function(x, ssp) setNames(x, paste0(ssp,".",getNames(x)))
-  addSSPnames <- function(x) mbind(addSSPname(x, "SSP1"), addSSPname(x, "SSP2"), addSSPname(x, "SSP3"), addSSPname(x, "SSP4"), addSSPname(x, "SSP5"), addSSPname(x, "SDP"))
+  addSSPnames <- function(x) mbind(addSSPname(x, "SSP1"), addSSPname(x, "SSP2"), addSSPname(x, "SSP3"), addSSPname(x, "SSP4"), addSSPname(x, "SSP5"), addSSPname(x, "SDP"), addSSPname(x, "SSP2Ariadne"))
   
   renameExtraWeights = function(magObj,magWeight, mapping){
     result = do.call(mbind,
