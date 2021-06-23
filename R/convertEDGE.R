@@ -319,7 +319,7 @@ convertEDGE <- function(x, subtype = "FE_stationary") {
     region_col = which(names(mapping) == "RegionCodeEUR_ETP")
     iso_col = which(names(mapping) == "CountryCode")
 
-    wg     <- calcOutput("Population", PopulationFuture = "SSP",     years=rem_years_hist,aggregate=F)
+    wg <- calcOutput("Population", years = rem_years_hist, aggregate = FALSE)
     getNames(x) <- paste0("pop_",getNames(x))
     getSets(wg) = gsub("variable","scenario",getSets(wg))
     wg = wg[,,getNames(x,T)[["scenario"]]]

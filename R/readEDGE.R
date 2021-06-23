@@ -48,7 +48,7 @@ readEDGE <- function(subtype = "FE_stationary") {
    # use SSP2 data also for SSP2Ariadne
    mbuilding_SSP2Ariadne <- mbuilding[,,"SSP2"]
    getNames(mbuilding_SSP2Ariadne) <- gsub("SSP2", "SSP2Ariadne", getNames(mbuilding_SSP2Ariadne))
-   mbuilding <- mbind(mbuilding, mstationary_SSP2Ariadne)
+   mbuilding <- mbind(mbuilding, mbuilding_SSP2Ariadne)
    
    getSets(mbuilding) <- c("region", "year", "scenario", "item")
    mdata = mbuilding  
