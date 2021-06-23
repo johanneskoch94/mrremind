@@ -17,27 +17,42 @@ readEDGE <- function(subtype = "FE_stationary") {
  if (subtype == "FE_stationary"){
   mstationary <- read.magpie("EDGE_TradMod.cs4r")
   mstationary[is.na(mstationary)] <- 0
-  # use SSP1 data also for SSP1plus/SDP
-  mstationary_SDP <- mstationary[,,"SSP1"]
-  getNames(mstationary_SDP) <- gsub("SSP1","SDP",getNames(mstationary_SDP))
-  mstationary <- mbind(mstationary,mstationary_SDP)
-  getSets(mstationary) <- c("region", "year", "scenario", "item")
   
-    mdata <- mstationary
+  # use SSP2 data also for SSP2Ariadne
+  mstationary_SSP2Ariadne <- mstationary[,,"SSP2"]
+  getNames(mstationary_SSP2Ariadne) <- gsub("SSP2", "SSP2Ariadne", getNames(mstationary_SSP2Ariadne))
+  mstationary <- mbind(mstationary, mstationary_SSP2Ariadne)
+  # use SSP1 data also for SDPs
+  mstationary_SDP <- mstationary[,,"SSP1"]
+  for (i in c("SDP", "SDP_EI", "SDP_RC", "SDP_MC")) {
+     getNames(mstationary_SDP) <- gsub("SSP1", i, getNames(mstationary[,,"SSP1"]))
+     mstationary <- mbind(mstationary, mstationary_SDP)
+  }
+
+  getSets(mstationary) <- c("region", "year", "scenario", "item")
+  mdata <- mstationary
+
  } else if (subtype == "FE_buildings") {
  
    mbuilding <- read.csv("EDGE_buildings_EDGE_EUR_ETP_CCoff.csv") 
    mbuilding <- as.magpie(mbuilding)
-   # read in additional data for SSP1plus/SDP
-   mbuilding_SDP <- read.csv("EDGE_buildings_EDGE_EUR_ETP_CCoff_SSP1plus.csv") 
-   mbuilding_SDP <- as.magpie(mbuilding_SDP)
-   # rename SSP1 into SDP
-   getNames(mbuilding_SDP) <- gsub("SSP1plus","SDP",getNames(mbuilding_SDP))
-   # add data on SSP1plus/SDP to data for all other scenarios
-   mbuilding <- mbind(mbuilding,mbuilding_SDP)
+   # read in additional data for SDP (still called SSP1plus here...)
+   mbuilding_SSP1plus <- read.csv("EDGE_buildings_EDGE_EUR_ETP_CCoff_SSP1plus.csv") %>%
+      as.magpie()
+   
+   mbuilding_SDP <- mbuilding_SSP1plus
+   for (i in c("SDP", "SDP_EI", "SDP_RC", "SDP_MC")) {
+     getNames(mbuilding_SDP) <- gsub("SSP1plus", i, getNames(mbuilding_SSP1plus))
+     mbuilding <- mbind(mbuilding, mbuilding_SDP)
+  }
+   # use SSP2 data also for SSP2Ariadne
+   mbuilding_SSP2Ariadne <- mbuilding[,,"SSP2"]
+   getNames(mbuilding_SSP2Ariadne) <- gsub("SSP2", "SSP2Ariadne", getNames(mbuilding_SSP2Ariadne))
+   mbuilding <- mbind(mbuilding, mstationary_SSP2Ariadne)
+   
    getSets(mbuilding) <- c("region", "year", "scenario", "item")
- 
    mdata = mbuilding  
+
  } else if(subtype == "Capital"){
    mcapital = read.csv("capitalProjections.csv")
    mcapital = as.magpie(mcapital)
