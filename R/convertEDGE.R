@@ -12,9 +12,9 @@ convertEDGE <- function(x, subtype = "FE_stationary") {
   #---- Functions -------------
   noYearDim <- function(x) setYears(x,NULL)
   addSSPnames <- function(x) {
-    purrr::map(c("SSP1", "SSP2", "SSP3", "SSP4", "SSP5", "SDP", "SDP_EI", "SDP_RC", "SDP_MC", "SSP2Ariadne"),
-               ~ setNames(x, paste0(.x, ".", getNames(x)))) %>% 
-    purrr::reduce(mbind)
+    out <- lapply(c("SSP1", "SSP2", "SSP3", "SSP4", "SSP5", "SDP", "SDP_EI", "SDP_RC", "SDP_MC", "SSP2Ariadne"), 
+                  function(y) {setNames(x, paste0(y, ".", getNames(x)))})  
+    mbind(out)
   }
   
   renameExtraWeights = function(magObj,magWeight, mapping){
@@ -172,8 +172,8 @@ convertEDGE <- function(x, subtype = "FE_stationary") {
     # For the future periods, the weight will be a linear combination of last FE weight and of the GDP size.
     # until maxYear_X_in_FE this will be exclusively FE, in 2060 (depending on the threshold value above), exclusively GDP 
   
-    wfe = mbind( wfe, lambda[,exceeding_years,] * wg[,exceeding_years,]
-                      + (1- lambda[,exceeding_years,]) * ( noYearDim(wfe[,maxYear_X_in_FE,]))
+    wfe = mbind( wfe, 
+    lambda[,exceeding_years,] * wg[,exceeding_years,] + (1- lambda[,exceeding_years,]) * ( noYearDim(wfe[,maxYear_X_in_FE,]))
     )
 
     # In cases where the variables in EDGE do not exist in the mapping for computing the final energy,

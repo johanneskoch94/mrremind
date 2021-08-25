@@ -17,17 +17,22 @@ calcCapital <- function(subtype = "Capital") {
     cap_macro = readSource("EDGE",subtype = subtype)
     millionDol2trillionDol <- 1e-6
 
-    additional_years = seq(2105,2150,5)
+    additional_years = seq(2105, 2150, 5)
 
-    cap_macro = time_interpolate(cap_macro,additional_years,integrate_interpolated_years = T, extrapolation_type = "constant")
+    cap_macro = time_interpolate(cap_macro,
+                                 additional_years,
+                                 integrate_interpolated_years = T, 
+                                 extrapolation_type = "constant")
     
     # compute macroeconomic capital stock based on capital intensities from PWT and ssp scenarios
     # t.b.d.: correct for capital stock part that enters energy sectors 
     capital = readSource("PWT")[,,"rkna"]
+    getNames(capital) <- "kap"
     capital[is.na(capital)] <- 0
     gdpppp_hist = calcOutput("GDPpppPast", aggregate = F, GDPpppPast="PWT")
     #pop = calcOutput("Population", aggregate = F)
-    cap_intensity = capital / (gdpppp_hist)    
+    cap_intensity <- capital / setNames(gdpppp_hist, NULL)    
+
     
     #use initial gdp as in REMIND which differs from PWT 
     gdpppp_hist = calcOutput("GDPpppPast", aggregate = F)
@@ -70,8 +75,7 @@ calcCapital <- function(subtype = "Capital") {
         gdp_weight[,t,] <- gdpppp[,t,]
     }   
     cap_intensity_future[is.na(cap_intensity_future)] <- 0 
-    cap_int_new <- cap_intensity_future 
-    countryList <- c()
+    cap_int_new <- cap_intensity_future
     for(t in getYears(cap_intensity_future)) {
       for(r in getRegions(cap_intensity_future)) {
       if(cap_intensity_future[r,t,"gdp_SSP2"]==0) {
@@ -87,33 +91,30 @@ calcCapital <- function(subtype = "Capital") {
         mapping$RegionCode <- r
         # store calculated data in separate file
         cap_int_new[r,t,] <- toolAggregate(cap_intensity_future[c_regi,t,],mapping,weight=gdp_weight[c_regi,t,])
-        # add country to the county list
-        countryList <- c(countryList,r)
       }
       }
     }
     
     cap_future <- cap_int_new * gdp_weight 
-    getNames(cap_future) <- paste0(getNames(cap_future),".kap")
     y = intersect(getYears(cap_future), getYears(cap_macro))
+    
+    
+    # Add SSP2Ariadne and SDP scenarios
+    cap_macro_SSP2A <- cap_macro[,,"gdp_SSP2"]
+    getNames(cap_macro_SSP2A) <- gsub("SSP2", "SSP2Ariadne", getNames(cap_macro_SSP2A))
+    cap_macro <- mbind(cap_macro, cap_macro_SSP2A)
+
+    cap_macro_SDP <- cap_macro[,,"gdp_SSP1"]
+    for (i in c("SDP", "SDP_EI", "SDP_RC", "SDP_MC")) {
+      getNames(cap_macro_SDP) <- gsub("SSP1", i, getNames(cap_macro[,,"gdp_SSP1"]))
+      cap_macro <- mbind(cap_macro, cap_macro_SDP)
+    }
+
+
     cap_macro = mbind(cap_macro[,y,], cap_future[,y,])
     
     cap_macro <- cap_macro * millionDol2trillionDol 
-    
-    # add SDP scenarios based on SSP1 and SSP2Ariadne based on SSP2
-    #cap_sdp = cap_macro[,,"gdp_SSP1"]
-    #getNames(cap_sdp) =gsub("gdp_SSP1","gdp_SDP",getNames(cap_sdp))
-    #cap_sdp_EI = cap_macro[,,"gdp_SSP1"]
-    #getNames(cap_sdp_EI) =gsub("gdp_SSP1","gdp_SDP_EI",getNames(cap_sdp_EI))
-    #cap_sdp_RC = cap_macro[,,"gdp_SSP1"]
-    #getNames(cap_sdp_RC) =gsub("gdp_SSP1","gdp_SDP_RC",getNames(cap_sdp_RC))
-    #cap_sdp_MC = cap_macro[,,"gdp_SSP1"]
-    #getNames(cap_sdp_MC) =gsub("gdp_SSP1","gdp_SDP_MC",getNames(cap_sdp_MC))
-    #cap_SSP2Ariadne = cap_macro[,,"gdp_SSP2"]
-    #getNames(cap_SSP2Ariadne) =gsub("gdp_SSP2","gdp_SSP2Ariadne",getNames(cap_SSP2Ariadne))
-    #
-    #cap_macro <- mbind(cap_macro, cap_sdp, cap_sdp_EI, cap_sdp_RC, cap_sdp_MC, cap_SSP2Ariadne)
-    
+
     # ---- add industry subsectors energy efficiency capital stocks ----
     EEK <- readSource('EDGE_Industry', 'p29_capitalQuantity_industry') %>% 
       as.data.frame() %>% 
@@ -122,9 +123,13 @@ calcCapital <- function(subtype = "Capital") {
              'pf' = 'Data2', 'value' = 'Value') %>% 
       character.data.frame() %>% 
       mutate(!!sym('period') := as.integer(!!sym('period'))) %>% 
-      # generate SDP scenario from SSP1
+      # generate SDP scenarios from SSP1
       pivot_wider(names_from = 'scenario') %>% 
-      mutate(!!sym('gdp_SDP') := !!sym('gdp_SSP1')) %>% 
+      mutate(!!sym('gdp_SDP') := gdp_SSP1,
+             !!sym('gdp_SDP_EI') := gdp_SSP1,
+             !!sym('gdp_SDP_RC') := gdp_SSP1,
+             !!sym('gdp_SDP_MC') := gdp_SSP1,
+             !!sym('gdp_SSP2Ariadne') := gdp_SSP2,) %>% 
       pivot_longer(matches('^gdp_'), names_to = 'scenario') %>% 
       # expand missing periods at constant level
       interpolate_missing_periods(
