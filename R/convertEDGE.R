@@ -214,8 +214,8 @@ convertEDGE <- function(x, subtype = "FE_stationary") {
       for (i in c("SSP1", "SSP2", "SSP3", "SSP4", "SSP5", "SDP", "SDP_EI", "SDP_RC", "SDP_MC", "SSP2Ariadne")) {
         i1 <- paste0(i, ".fepet")
         i2 <- paste0(i, ".fedie")
-        feTransp[, getYears(feShares), i1] <- feShares[, getYears(feShares), i1] * setNames(feTotal[, getYears(feShares), i], i2)
-        feTransp[, getYears(feShares), i2] <- feShares[, getYears(feShares), i1] * setNames(feTotal[, getYears(feShares), i], i2)
+        feTransp[, getYears(feShares), i1] <- feShares[, getYears(feShares), i1] * setNames(feTotal[, getYears(feShares), i], i1)
+        feTransp[, getYears(feShares), i2] <- feShares[, getYears(feShares), i2] * setNames(feTotal[, getYears(feShares), i], i2)
       }
       
       # extrapolating missing historical years
