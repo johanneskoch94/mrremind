@@ -19,7 +19,7 @@ calcEDGETrData <- function() {
   EDGETdata = lapply(strsplit(cartesian(x = c("ConvCase", "ElecEra", "HydrHype",
                                        "ConvCaseWise", "ElecEraWise",
                                        "HydrHypeWise"),
-                                        y = c(paste0('SSP', c(1, 2, 5)))),
+                                        y = c(paste0('SSP', c(1, 2, 5)), "SSP2Ariadne", "SDP")),
                               '\\.'),
                      function(x) {
                        generateEDGEdata(input_folder = paste0(getConfig("mainfolder"), "/sources/EDGE-T_standalone/"),
