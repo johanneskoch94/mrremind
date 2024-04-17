@@ -1,0 +1,26 @@
+#' Read OECD
+#'
+#' Read-in risk premium
+#'
+#' @return Magpie object of the data
+#' @seealso [madrat::readSource()]
+#' @examples \dontrun{
+#' readSource("OECD")
+#' }
+#' @order 1
+readOECD <- function() {
+  readxl::read_excel("cre-crc-current-english.xlsx", na = "-", progress = FALSE) %>%
+    dplyr::select("iso3c" = "Country Code\r\nISO Alpha 3", "Current Prevailing Classification") %>%
+    dplyr::mutate("Current Prevailing Classification" = as.numeric(.data$`Current Prevailing Classification`)) %>%
+    dplyr::filter(!is.na(iso3c)) %>%
+    as.magpie()
+}
+
+#' @rdname readOECD
+#' @order 2
+#' @param x MAgPIE object returned from readOECD
+convertOECD <- function(x) {
+  x[is.na(x)] <- 0
+  x <- toolCountryFill(x, fill = 0)
+  x
+}
