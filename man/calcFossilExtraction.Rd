@@ -18,7 +18,7 @@ provides coefficients for fossil fuels (oil, gas and coal) and uranium extractio
 \examples{
 
 \dontrun{
-calcOutput(type="FossilExtraction",subtype='FossilExtraction')
+calcOutput("FossilExtraction", subtype = 'FossilExtraction')
 }
 }
 \seealso{

@@ -16,13 +16,9 @@
 #' \dontrun{
 #' a <- readSource(type = "Stegmann2022")
 #' }
-#'
-#' @importFrom readxl read_xlsx
-#' @importFrom reshape2 melt
-
 readStegmann2022 <- function() {
 
-  data <- read_xlsx("41586_2022_5422_MOESM1_ESM.xlsx", sheet = "Data")
+  data <- readxl::read_xlsx("41586_2022_5422_MOESM1_ESM.xlsx", sheet = "Data")
 
   reshape2::melt(data, id.vars = seq(1, 5), variable.name = "period") %>%
     as.magpie(spatial = 3) %>%

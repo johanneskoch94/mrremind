@@ -1,6 +1,4 @@
-#' @importFrom dplyr group_by_ min_rank select_ mutate_
 #' @importFrom quitte as.quitte
-
 convertECLIPSE <- function(x, subtype) {
 
   # Parameter definitions
@@ -69,7 +67,7 @@ convertECLIPSE <- function(x, subtype) {
       mutate(value = ifelse(.data$value == 0, NA, .data$value)) %>%
       # group_by(region, sector,variable,scenario) %>%
       group_by(!!!syms(grp_cols)) %>%
-      mutate(rank = min_rank(.data$period),
+      mutate(rank = dplyr::min_rank(.data$period),
              value = ifelse(  all(is.na(.data$value))
                             | !any(is.na(.data$value))
                             | !is.na(.data$value),

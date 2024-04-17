@@ -10,11 +10,11 @@ readRutovitz2015(subtype)
 \item{subtype}{Either "oecd_ef","regional_ef","coal_ef","gas_ef", "regional_mult"}
 }
 \value{
-magpie object of employment factors for different technologies and activities in Jobs/MW (all except fuel_supply) or Jobs/PJ (fuel_supply). Subtype "regional_mult" is a regional multiplier without units.
+Magpie object of employment factors for different technologies and activities in Jobs/MW
+  (all except fuel_supply) or Jobs/PJ (fuel_supply). Subtype "regional_mult" is a regional multiplier without units.
 }
 \description{
-Rutovitz, J., Dominish, E., & Downes, J. (2015). Calculating global energy sector jobs—2015 methodology update. Institute for Sustainable Futures, University of Technology, Sydney. https://opus.lib.uts.edu.au/bitstream/10453/43718/1/Rutovitzetal2015Calculatingglobalenergysectorjobsmethodology.pdf
-}
-\author{
-Aman Malik
+Rutovitz, J., Dominish, E., & Downes, J. (2015). Calculating global energy sector jobs—2015 methodology update.
+ Institute for Sustainable Futures, University of Technology, Sydney.
+ https://opus.lib.uts.edu.au/bitstream/10453/43718/1/Rutovitzetal2015Calculatingglobalenergysectorjobsmethodology.pdf
 }

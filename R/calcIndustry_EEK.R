@@ -6,23 +6,12 @@
 #' @return A list with a [`magpie`][magclass::magclass] object `x`, `weight`,
 #'   `unit`, and `description` fields.
 #'
-#' @importFrom assertr assert
-#' @importFrom dplyr %>% arrange bind_rows filter group_by lag lead mutate n
-#'                   row_number select
-#' @importFrom madrat calcOutput readSource getISOlist
-#' @importFrom magclass mbind
-#' @importFrom quitte madrat_mule
-#' @importFrom purrr map reduce
-#' @importFrom rlang .data .env sym syms
-#' @importFrom tidyr nest pivot_longer unnest
-
+#' @importFrom dplyr bind_rows filter group_by lag lead mutate n row_number select
 #' @export
 calcIndustry_EEK <- function(kap) {
   # setup ----
   i <- log(4) / 50    # assuming 50 year lifetime of EEK
   base_year <- 2015
-
-  . <- NULL
 
   # read data ----
   ## subsector activity projections ----
@@ -33,128 +22,101 @@ calcIndustry_EEK <- function(kap) {
     match.steel.estimates = 'IEA_ETP',
     China_Production = readSource(type = 'ExpertGuess',
                                   subtype = 'Chinese_Steel_Production',
-                                  convert = FALSE) %>%
-      madrat_mule(),
-    aggregate = FALSE, years = base_year, supplementary = FALSE, warnNA = FALSE) %>%
-    `[`(,,'gdp_SSP2EU') %>%
+                                  convert = FALSE) %>% quitte::madrat_mule(),
+    aggregate = FALSE,
+    years = base_year,
+    supplementary = FALSE,
+    warnNA = FALSE
+  ) %>%
+    `[`(, , 'gdp_SSP2EU') %>%
     quitte::magclass_to_tibble() %>%
     select('iso3c', subsector = 'name', VA = 'value') %>%
     mutate(subsector = sub('_VA$', '', .data$subsector))
 
   ## investment volumes into energy efficiency ----
   IEA_WEIO_2014 <- readSource('IEA_WEIO_2014', convert = FALSE) %>%
-    madrat_mule()
+    quitte::madrat_mule()
 
   ## industry subsector activity and FE projections ----
   FEdemand <- calcOutput(type = 'FEdemand', aggregate = FALSE, supplementary = FALSE)
 
   # calculate EEK ----
   ## split industry VA into IEA investment sectors ----
-  # Cement, Chemicals, and Steel are 'energy intensive', Other Industry is
-  # 'non-energy intensive'
+  # Cement, Chemicals, and Steel are 'energy intensive', Other Industry is 'non-energy intensive'
   industry_VA <- industry_VA %>%
-    full_join(
-      IEA_WEIO_2014 %>%
-        getElement('country_groups'),
+    dplyr::full_join(IEA_WEIO_2014$country_groups, by = "iso3c") %>%
+    assertr::assert(assertr::not_na, tidyselect::everything()) %>%
+    dplyr::mutate(name = ifelse('otherInd' == .data$subsector, 'Non-energy intensive', 'Energy intensive')) %>%
+    # Calculate country/sector share in IEA region VA
+    dplyr::mutate(VA.share = .data$VA / sum(.data$VA), .by = c("IEA region", "name"))
 
-      'iso3c'
-    ) %>%
-    assert(not_na, everything()) %>%
-    mutate(name = ifelse('otherInd' == .data$subsector,
-                         'Non-energy intensive',
-                         'Energy intensive')) %>%
-    # calculate country/sector share in IEA region VA
-    group_by(!!!syms(c('IEA region', 'name'))) %>%
-    mutate(VA.share = .data$VA / sum(.data$VA)) %>%
-    ungroup()
-
-  ## calculate EEK from investments ----
-  EEK <- IEA_WEIO_2014 %>%
-    getElement('data') %>%
-    # combine investment estimates with subsector VA figures
-    inner_join(
-      industry_VA,
-
-      c('IEA region', 'name')
-    ) %>%
-    # assuming a "steady state", where investments only replace existing EEK
-    # stock
-    mutate(EEK = .data$VA.share * .data$value / .env$i) %>%
-    select('iso3c', 'subsector', 'EEK')
+  ## Calculate EEK from investments ----
+  EEK <- IEA_WEIO_2014$data %>%
+    # Combine investment estimates with subsector VA figures
+    dplyr::inner_join(industry_VA, by = c("IEA region", "name")) %>%
+    # Assuming a "steady state", where investments only replace existing EEK stock
+    dplyr::mutate(EEK = .data$VA.share * .data$value / i) %>%
+    dplyr::select("iso3c", "subsector", "EEK")
 
   ## split steel EEK ----
   EEK <- EEK %>%
     # split steel EEK based on primary/secondary steel FE shares (higher FE
     # shares should lead to higher EEK shares)
-    left_join(
+    dplyr::left_join(
       FEdemand %>%
         `[`(,base_year,'gdp_SSP2EU.fe', pmatch = 'left') %>%
         `[`(,,'steel', pmatch = TRUE) %>%
         quitte::magclass_to_tibble() %>%
-        select(iso3c = 'region', 'item', FE = 'value') %>%
+        dplyr::select(iso3c = 'region', 'item', FE = 'value') %>%
         # everything not 'steel_secondary' is 'steel_primary'
-        mutate(item = sub('steel$', 'steel_primary', .data$item)) %>%
+        dplyr::mutate(item = sub('steel$', 'steel_primary', .data$item)) %>%
         extract('item', 'foo', '^fe.*_(steel_.*)$') %>%
         # calculate primary/secondary steel FE shares
         group_by(!!!syms(c('iso3c', 'foo'))) %>%
-        summarise(FE = sum(.data$FE), .groups = 'drop_last') %>%
-        mutate(FE.share = tidyr::replace_na(.data$FE / sum(.data$FE), 0), subsector = 'steel') %>%
+        dplyr::summarise(FE = sum(.data$FE), .groups = 'drop_last') %>%
+        dplyr::mutate(FE.share = tidyr::replace_na(.data$FE / sum(.data$FE), 0), subsector = 'steel') %>%
         ungroup() %>%
-        select(-'FE'),
-
-      c('iso3c', 'subsector')
+        dplyr::select(-'FE'),
+      by = c('iso3c', 'subsector')
     ) %>%
-    mutate(subsector = ifelse(is.na(.data$foo), .data$subsector, .data$foo),
-           EEK       = ifelse(is.na(.data$foo), .data$EEK,
-                              .data$EEK * .data$FE.share)) %>%
-    select('iso3c', 'subsector', 'EEK')
+    dplyr::mutate(subsector = ifelse(is.na(.data$foo), .data$subsector, .data$foo),
+                  EEK       = ifelse(is.na(.data$foo), .data$EEK, .data$EEK * .data$FE.share)) %>%
+    dplyr::select('iso3c', 'subsector', 'EEK')
 
-  ## deflate 2012 dollars ----
-  # Converting from 2012 to 2005 dollars using GDP deflator from
-  # https://data.worldbank.org/indicator/NY.GDP.DEFL.ZS?locations=US
+  ## Converting from billion 2012 to trillion 2017 dollars
   EEK <- EEK %>%
-    mutate(EEK = .data$EEK * 0.8743,
-           # $bn/yr * 1e-3 $tn/$bn = $tn/yr
-           EEK = .data$EEK * 1e-3)
+    dplyr::rename("value" = "EEK") %>%
+    GDPuc::convertGDP(unit_in = "constant 2012 Int$PPP",
+                      unit_out = "constant 2017 Int$PPP",
+                      replace_NAs = "with USA") %>%
+    dplyr::mutate(value = .data$value * 1e-3) %>%
+    dplyr::rename("EEK" = "value")
 
   ## temper EEK share in total capital ----
   # Temper industry EEK share in total capital by applying a geometric average
   # between the regional shares and the global share.
-  temper <- full_join(
-    EEK %>%
-      group_by(.data$iso3c) %>%
-      summarise(EEK = sum(.data$EEK), .groups = 'drop') %>%
-      sum_total_(group = 'iso3c', value = 'EEK', name = 'World'),
+  temper <- full_join(EEK %>%
+                        dplyr::summarise(EEK = sum(.data$EEK), .by = "iso3c") %>%
+                        quitte::sum_total_(group = 'iso3c', value = 'EEK', name = 'World'),
+                      quitte::sum_total_(kap, group = 'iso3c', value = 'kap', name = 'World'),
+                      by = "iso3c") %>%
+    assertr::assert(assertr::not_na, tidyselect::everything()) %>%
+    dplyr::mutate(kap_ind_share = .data$EEK / .data$kap,
+                  temper = .data$kap_ind_share['World' == .data$iso3c],
+                  kap_ind_share_tempered = ifelse(
+                    'World' == .data$iso3c,
+                    FALSE,
+                    (.data$kap_ind_share * .data$temper ^ 2) ^ (1 / 3)),
+                  kap_ind_tempered = .data$kap_ind_share_tempered * .data$kap,
+                  kap_ind_tempered = ifelse('World' == .data$iso3c,
+                                            sum(.data$kap_ind_tempered),
+                                            .data$kap_ind_tempered),
+                  temper = .data$kap_ind_tempered / .data$EEK) %>%
+    dplyr::filter('World' != .data$iso3c)
 
-      kap %>%
-        sum_total_(group = 'iso3c', value = 'kap', name = 'World'),
-
-      'iso3c'
-    ) %>%
-    assert(not_na, everything()) %>%
-    mutate(
-      kap_ind_share = .data$EEK / .data$kap,
-      temper = .data$kap_ind_share['World' == .data$iso3c],
-      kap_ind_share_tempered = ifelse(
-        'World' == .data$iso3c, FALSE,
-        (.data$kap_ind_share * .data$temper ^ 2) ^ (1 / 3)),
-      kap_ind_tempered = .data$kap_ind_share_tempered * .data$kap,
-      kap_ind_tempered = ifelse('World' == .data$iso3c,
-                                sum(.data$kap_ind_tempered),
-                                .data$kap_ind_tempered),
-      temper = .data$kap_ind_tempered / .data$EEK) %>%
-    filter('World' != .data$iso3c)
-
-  EEK <- full_join(
-    EEK,
-
-    temper %>%
-      select('iso3c', 'temper'),
-
-    'iso3c'
-  ) %>%
-    mutate(EEK = .data$EEK * .data$temper) %>%
-    select(-'temper')
+  EEK <- EEK %>%
+    dplyr::full_join(temper %>% dplyr::select("iso3c", "temper"), by = "iso3c") %>%
+    dplyr::mutate(EEK = .data$EEK * .data$temper, .keep = "unused")
 
   ## calculate EEK growth rates ----
   # EEK is assumed to stay constant in relation to subsector output, so it
@@ -162,7 +124,7 @@ calcIndustry_EEK <- function(kap) {
   # the depreciation rate i.
   EEK_change <- FEdemand %>%
     # select relevant subsector outputs, transform into usable format
-    `[`(,,'ue_', pmatch = 'left') %>%
+    `[`(, , 'ue_', pmatch = 'left') %>%
     quitte::magclass_to_tibble(c('iso3c', 'year', 'scenario', 'subsector', 'value')) %>%
     filter(.data$subsector %in% c('ue_cement', 'ue_chemicals',
                                   'ue_steel_primary', 'ue_steel_secondary',
@@ -225,7 +187,7 @@ calcIndustry_EEK <- function(kap) {
     # duplicate year, as the variable gets lost during nesting
     mutate(year2 = .data$year) %>%
     group_by(.data$year2) %>%
-    nest() %>%
+    tidyr::nest() %>%
     pull(.data$data) %>%
     # Sequentially operate on two one-row data frames, x being the result of
     # the previous operation, or starting at the base year row, y the
@@ -234,7 +196,7 @@ calcIndustry_EEK <- function(kap) {
     # depreciation limit, as it has already been processed.  reduce() returns
     # only the last row of the computation, so we get one output row for each
     # of the input rows.
-    reduce(
+    purrr::reduce(
       .f = function(x, y) {
         bind_rows(x, y) %>%
           group_by(.data$iso3c, .data$scenario, .data$subsector) %>%
@@ -266,9 +228,9 @@ calcIndustry_EEK <- function(kap) {
     ) %>%
     mutate(year2 = .data$year) %>%
     group_by(.data$year2) %>%
-    nest() %>%
+    tidyr::nest() %>%
     pull(.data$data) %>%
-    reduce(
+    purrr::reduce(
       .f = function(x, y) {
         bind_rows(x, y) %>%
           group_by(.data$iso3c, .data$scenario, .data$subsector) %>%
@@ -310,24 +272,16 @@ calcIndustry_EEK <- function(kap) {
 
         c('iso3c', 'scenario', 'subsector')
       ),
-
     # fixed rates
     EEK_change_valid_forward,
-
     EEK_change_valid_backward
   ) %>%
-    distinct(.data$iso3c, .data$scenario, .data$subsector, .data$year,
-             .data$change)
+    distinct(.data$iso3c, .data$scenario, .data$subsector, .data$year, .data$change)
 
-  EEK <- full_join(
-    EEK %>%
-      mutate(subsector = paste0('ue_', .data$subsector)),
-
-    EEK_change,
-
-    c('iso3c', 'subsector')
-  ) %>%
-    assert(not_na, everything()) %>%
+  EEK <- full_join(EEK %>% mutate(subsector = paste0('ue_', .data$subsector)),
+                   EEK_change,
+                   by = c("iso3c", "subsector")) %>%
+    assertr::assert(assertr::not_na, tidyselect::everything()) %>%
     mutate(value = .data$EEK * .data$change,
            subsector = sub('^ue_', 'kap_', .data$subsector)) %>%
     select('iso3c', 'year', 'scenario', 'subsector', 'value')
@@ -340,30 +294,22 @@ calcIndustry_EEK <- function(kap) {
 
   EEK <- bind_rows(
     EEK %>%
-      anti_join(
-        tibble(iso3c = SSA_iso3c,
-               year = 2025,
-               scenario = 'gdp_SSP5',
-               subsector = 'kap_steel_primary'),
-
-        c('iso3c', 'year', 'scenario', 'subsector')
-      ),
-
+      dplyr::anti_join(tibble::tibble(iso3c = SSA_iso3c,
+                                      year = 2025,
+                                      scenario = 'gdp_SSP5',
+                                      subsector = 'kap_steel_primary'),
+                       c('iso3c', 'year', 'scenario', 'subsector')),
     EEK %>%
-      semi_join(
-        tibble(tidyr::crossing(iso3c = SSA_iso3c, year = c(2020, 2025, 2030)),
-               scenario = 'gdp_SSP5',
-               subsector = 'kap_steel_primary'),
-        by = c('iso3c', 'year', 'scenario', 'subsector')
-      ) %>%
-      group_by(.data$iso3c, .data$scenario, .data$subsector) %>%
-      summarise(value = mean(.data$value), year = 2025L, .groups = 'drop')
+      dplyr::semi_join(tibble::tibble(tidyr::crossing(iso3c = SSA_iso3c, year = c(2020, 2025, 2030)),
+                                      scenario = 'gdp_SSP5',
+                                      subsector = 'kap_steel_primary'),
+                       by = c('iso3c', 'year', 'scenario', 'subsector')) %>%
+      dplyr::summarise(value = mean(.data$value), year = 2025L, .by = c("iso3c", "scenario", "subsector"))
   )
 
-  # return ----
-  return(list(x = EEK %>%
-                as.magpie(spatial = 1, temporal = 2, data = ncol(.)),
-              weight = NULL,
-              unit = 'trillion 2005US$',
-              description = 'industry energy efficiency capital stock'))
+
+  list(x = as.magpie(EEK, spatial = 1, temporal = 2, data = ncol(EEK)),
+       weight = NULL,
+       unit = 'trillion 2017US$',
+       description = 'Industry energy efficiency capital stock')
 }

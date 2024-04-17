@@ -1,8 +1,5 @@
-#' @importFrom reshape2 melt
-#' @importFrom utils read.table
-
 readDLR <- function() {
-  
+
   countries <- c(
     'Afghanistan',
     'Algeria',
@@ -216,79 +213,79 @@ readDLR <- function() {
     'Yemen',
     'Zambia',
     'Zimbabwe')
-  
+
   iso.countries <- suppressWarnings(toolCountry2isocode(countries))
 
   ### year
   year <- "y2010"
-  
+
   ### quality bin
-  bins <- read.table("FLh_bins_TriebFormula_2013_11_26.txt", col.names = c("PV", "CSP"))
-  
+  bins <- utils::read.table("FLh_bins_TriebFormula_2013_11_26.txt", col.names = c("PV", "CSP"))
+
   ### define which columns to read, psv: odd columns, csp: even columns (exclude first two and last two)
   colClasses.df <- data.frame(PV = character(428), CSP = character(428))
   colClasses.df$PV <- c(rep("NULL", 2), rep(c(NA, "NULL"), length(countries)), rep("NULL", 2))
   colClasses.df$CSP <- c(rep("NULL", 2), rep(c("NULL", NA), length(countries)), rep("NULL", 2))
-  
+
   ### csv files
   csv.files <- list.files(pattern=".csv$")
-  
+
   ### read csv function
   read.csv.Solar <- function(x) {
-    
-    technology <- ifelse(grepl(x=x, pattern="PV"), "PV", 
+
+    technology <- ifelse(grepl(x=x, pattern="PV"), "PV",
                          ifelse(grepl(x=x, pattern="CSP"), "CSP", NA))
-    
-    distance <- ifelse(grepl(x=x, pattern="1-50"), "0-50", 
-                       ifelse(grepl(x=x, pattern="1-100"), "0-100", 
+
+    distance <- ifelse(grepl(x=x, pattern="1-50"), "0-50",
+                       ifelse(grepl(x=x, pattern="1-100"), "0-100",
                               ifelse(grepl(x=x, pattern="1-inf"), "0-inf", NA)))
-    
-    type <- ifelse(grepl(x=x, pattern="_MW_"), "capacity", 
+
+    type <- ifelse(grepl(x=x, pattern="_MW_"), "capacity",
                    ifelse(grepl(x=x, pattern="_area_"), "area", NA))
-    
+
     bin <- bins[,technology]
     bin.names <- paste0("bin", 1:nrow(bins))
-    
+
     out <- read.csv2(x, header=FALSE, colClasses=colClasses.df[,technology])
     colnames(out) <- iso.countries
     out$type <- type
     out$technology <- technology
     out$distance <- distance
     out$bin <- bin
-    
+
     ### add empty data frames for csp area data
-    
+
     if(all(technology=="CSP", type=="capacity")){
       out.area.csp <- out
       out.area.csp$type <- "area"
       out.area.csp[,1:length(iso.countries)] <- NA
-      
+
       out <- rbind(out, out.area.csp)
     }
-    
+
     return(out)
   }
-  
+
 
   ### read data
-  
-  df <- do.call(rbind, lapply(csv.files, read.csv.Solar))
-  
 
-  dat <- melt(df, id.vars = c("technology", "distance", "bin", "type"))
+  df <- do.call(rbind, lapply(csv.files, read.csv.Solar))
+
+
+  dat <- reshape2::melt(df, id.vars = c("technology", "distance", "bin", "type"))
   # sort bin dimension
   dat <- dat[order(dat$bin),]
-  
+
   dat$Year <- year
   dat <- dat[c(5,7,4,1,2,3,6)]
   colnames(dat) <- c("region", "Year", "Type","Technology", "Distance", "Bin", "Value")
   dat$region <- as.character(dat$region)
   dat <- dat[!(dat$region =="ANT"),]
-  
+
   dat <- dat[which(!is.na(dat$region)),]
-  
+
   out <- as.magpie(dat, datacol=7)
-  
+
   return(out)
-    
+
 }

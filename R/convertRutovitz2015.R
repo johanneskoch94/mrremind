@@ -3,8 +3,6 @@
 #' @param subtype "oecd_ef" or "regional_mult" or "regional_ef" or "coal_ef" or "gas_ef"
 #' @author Aman Malik
 #' @importFrom stats na.omit
-
-
 convertRutovitz2015 <- function(x, subtype) {
   country <- NULL
   year <- NULL

@@ -11,15 +11,12 @@
 #'
 #' @param subtype Either 'Waste' or 'AviationShipping'
 #'
-#' @importFrom readxl read_excel
-#' @importFrom dplyr filter_ mutate_ rename_ select_ recode
-#' @importFrom tidyr gather_ separate_
-#' @importFrom stats complete.cases
+#' @importFrom dplyr recode
 
 readRCP <- function(subtype) {
 
 
-  dat <- as.data.frame(do.call(rbind, lapply(list.files(pattern = ".xls$"), read_excel)))
+  dat <- as.data.frame(do.call(rbind, lapply(list.files(pattern = ".xls$"), readxl::read_excel)))
 
   if (subtype == "Waste") {
     dat <- dat %>%
@@ -66,7 +63,7 @@ readRCP <- function(subtype) {
                       `VOC emissions`="VOC",
                       `NH3 emissions`="nh3")
 
-  dat <- dat[complete.cases(dat),]
+  dat <- dat[stats::complete.cases(dat),]
 
   out <- as.magpie(dat, spatial=1 ,datacol=6)
 

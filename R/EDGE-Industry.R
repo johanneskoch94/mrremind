@@ -34,10 +34,8 @@
 #'
 #' @importFrom assertr assert not_na verify within_bounds
 #' @importFrom broom tidy
-#' @importFrom car logit
-#' @importFrom dplyr %>% case_when bind_rows between distinct first last n
+#' @importFrom dplyr case_when bind_rows between distinct first last n
 #'   mutate pull right_join select semi_join vars
-#' @importFrom Hmisc wtd.quantile
 #' @importFrom ggplot2 aes coord_cartesian expand_limits facet_wrap geom_area
 #'   geom_line geom_path geom_point ggplot ggsave guide_legend labs
 #'   scale_colour_manual scale_fill_discrete scale_fill_manual
@@ -273,15 +271,15 @@ calcSteel_Projections <- function(subtype = 'production',
     Asym <- regression_data %>%
       filter(.estimate == .data$estimate) %>%
       group_by(.data$year) %>%
-      summarise(Asym = 1.1 * wtd.quantile(x = .data$steel.stock.per.capita,
-                                          weights = .data$population,
-                                          probs = 0.99),
+      summarise(Asym = 1.1 * Hmisc::wtd.quantile(x = .data$steel.stock.per.capita,
+                                                 weights = .data$population,
+                                                 probs = 0.99),
                 .groups = 'drop') %>%
       pull('Asym') %>%
       max()
 
-    coefficients <- lm(
-      formula = logit(x, adjust = 0.025) ~ y,
+    coefficients <- stats::lm(
+      formula = car::logit(x, adjust = 0.025) ~ y,
       data = regression_data %>%
         filter(.estimate == .data$estimate,
                between(.data$steel.stock.per.capita, 0, Asym)) %>%

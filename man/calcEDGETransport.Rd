@@ -18,11 +18,7 @@ Prepare EDGETransport inputs
 \examples{
 \dontrun{ a <- calcOutput(type="EDGETransport", subtype="logit_exponent", aggregate=F)
 }
-
 }
 \seealso{
 \code{\link{readSource}}
-}
-\author{
-Alois Dirnaichner, Marianna Rottoli
 }

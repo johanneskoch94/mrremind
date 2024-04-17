@@ -8,9 +8,8 @@
 #'
 #' @param subtype decides whether emissions or emission factors are returned
 #' @param sectoral_resolution aggreaged or extenden (uses different GAINS input data)
-#' @importFrom dplyr group_by_ summarise_ ungroup mutate_ rename_ filter_ select_
+#' @importFrom dplyr ungroup
 #' @importFrom magclass as.magpie getCells getSets<- getNames<- getSets getRegions<- mselect<- setNames write.magpie
-#' @importFrom tidyr gather_
 #' @importFrom utils read.csv read.csv2
 #' @importFrom quitte as.quitte
 

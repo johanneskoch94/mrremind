@@ -22,7 +22,6 @@ https://static-content.springer.com/esm/art\%3A10.1038\%2Fs41586-022-05422-5/Med
 \dontrun{
 a <- readSource(type = "Stegmann2022")
 }
-
 }
 \seealso{
 \code{\link{readSource}}

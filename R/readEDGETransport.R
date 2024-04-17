@@ -306,11 +306,11 @@ readEDGETransport <- function(subtype = "logit_exponent") {
            tmp[node == "Electric Trains", node := "ueelTt"]
            ## extend to time steps necessary for the input demand trend
            tmp = rmndt::approx_dt(tmp,
-                           xdata = c(seq(1993, 2010, 1), seq(2015, 2150, 5)),
-                           xcol = "year",
-                           ycol = "value",
-                           idxcols = c("GDP_scenario", "DEM_scenario", "EDGE_scenario", "region", "node"),
-                           extrapolate = TRUE)
+                                  xdata = c(seq(1993, 2010, 1), seq(2015, 2150, 5)),
+                                  xcol = "year",
+                                  ycol = "value",
+                                  idxcols = c("GDP_scenario", "DEM_scenario", "EDGE_scenario", "region", "node"),
+                                  extrapolate = TRUE)
            ## set cols order
            setcolorder(tmp, c("GDP_scenario", "DEM_scenario", "EDGE_scenario", "region",
                               "year", "node", "value"))

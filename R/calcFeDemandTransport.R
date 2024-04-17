@@ -74,7 +74,7 @@ calcFeDemandTransport <- function() {
     select("scenario", "region", "year" = "period", "item", "value") %>%
     filter(.data$scenario == "gdp_SSP2") %>%
     mutate("scenario" = "gdp_SDP") %>%
-    as.data.table()
+    data.table::as.data.table()
 
   ## get population
   pop <- data.table::as.data.table(calcOutput("Population"))[
@@ -186,7 +186,5 @@ calcFeDemandTransport <- function() {
   # replace SDP data calculated in readSource("Stationary") with corrected data
   remind <- mbind(remind[, , getNames(dem_iso), invert = TRUE], dem_iso)
 
-  return(list(x = remind, weight = NULL, unit = "EJ",
-              description = "final energy demand in transport"))
-
+  list(x = remind, weight = NULL, unit = "EJ", description = "Final energy demand in transport")
 }

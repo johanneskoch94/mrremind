@@ -5,15 +5,10 @@
 #' "Consumption", "Trade Oil", "Trade Gas", "Trade Coal" or "Price"
 #' @return A [`magpie`][magclass::magclass] object.
 #' @author Aman Malik, Falk Benke
-#' @importFrom tidyr gather
-#' @importFrom dplyr filter %>% mutate
+#' @importFrom dplyr filter mutate
 #' @importFrom readxl read_excel
-#' @importFrom reshape2 melt
 #' @importFrom rlang sym
-
 readBP <- function(subtype) {
-  rlang::check_installed("reshape")
-
   value <- NULL
   Country <- NULL
   Year <- NULL
@@ -24,7 +19,7 @@ readBP <- function(subtype) {
     colnames(df)[1] <- "Country"
     df$Country <- gsub("\\.", "", df$Country)
     df <- df %>%
-      gather(colnames(df[1, -1]), key = "Year", value = value) %>%
+      tidyr::gather(colnames(df[1, -1]), key = "Year", value = value) %>%
       filter(!grepl(rows2remove, Country), !is.na(value), !value == "n/a", Year %in% years) %>%
       mutate(Year = as.integer(Year), value = as.numeric(value)) %>%
       mutate(Country = gsub(pattern = " and ", replacement = " & ", x = Country)) %>%
@@ -64,7 +59,8 @@ readBP <- function(subtype) {
     data_geothermal <- read_excel(filename, sheet = "Geothermal Capacity", range = "A4:AA43")
     data_geothermal <- tidy_data(data_geothermal, "Capacity|Geothermal (MW)")
 
-    data <- reshape::merge_recurse(list(data_solar, data_wind, data_geothermal))
+    data <- list(data_solar, data_wind, data_geothermal) %>%
+      purrr::reduce(~dplyr::full_join(.x, .y, by = c("Country", "Year")))
   }
   # Generation data for Nuclear, Hydro, Solar, Wind, Geobiomass, Other Renewables
   else if (subtype == "Generation") {
@@ -98,12 +94,9 @@ readBP <- function(subtype) {
     data_geo_biomass <- read_excel(filename, sheet = "Geo Biomass Other - TWh", range = "A3:BE114")
     data_geo_biomass <- tidy_data(data_geo_biomass, "Generation|Geo_biomass (TWh)")
 
-    data <- reshape::merge_recurse(list(
-      data_wind, data_solar, data_hydro, data_geo_biomass, data_nuclear,
-      data_elec, data_elect_renewable, data_elec_gas, data_elec_oil, data_elec_coal
-    ))
-
-    data <- filter(data, !grepl("\\.", data$Year))
+    data <- list(data_wind, data_solar, data_hydro, data_geo_biomass, data_nuclear,
+                 data_elec, data_elect_renewable, data_elec_gas, data_elec_oil, data_elec_coal) %>%
+      purrr::reduce(~dplyr::full_join(.x, .y, by = c("Country", "Year")))
   }
   else if (subtype == "Production") {
     data_oil <- read_excel(filename, sheet = "Oil Production - Tonnes", range = "A3:BE73")
@@ -119,9 +112,10 @@ readBP <- function(subtype) {
     data_gas <- tidy_data(data_gas, "Gas Production (EJ)")
 
     # Includes crude oil, shale oil, oil sands, condensates (lease condensate or gas condensates that require
-    # further refining) and NGLs (natural gas liquids - ethane, LPG and naphtha separated from the production of natural gas).
-    data <- reshape::merge_recurse(list(data_oil, data_coal_ej, data_coal_ton, data_gas)) # merging all datasets into one
-    data <- filter(data, !grepl("\\.", data$Year))
+    # further refining) and NGLs (natural gas liquids - ethane, LPG and naphtha separated from the production of
+    # natural gas).
+    data <- list(data_oil, data_coal_ej, data_coal_ton, data_gas) %>%
+      purrr::reduce(~dplyr::full_join(.x, .y, by = c("Country", "Year")))
   }
   else if (subtype == "Consumption") {
     data_pe_consumption <- read_excel(filename, sheet = "Primary Energy Consumption", range = "A3:BE114")
@@ -151,11 +145,10 @@ readBP <- function(subtype) {
     data_hydro_consumption <- read_excel(filename, sheet = "Hydro Consumption - EJ", range = "A3:BE114")
     data_hydro_consumption <- tidy_data(data_hydro_consumption, "Hydro Consumption (EJ)")
 
-    data <- reshape::merge_recurse(list(
-      data_pe_consumption, data_liq_consumption, data_oil_consumption, data_gas_consumption,
-      data_coal_consumption, data_solar_consumption, data_wind_consumption, data_nuclear_consumption,
-      data_hydro_consumption
-    ))
+    data <- list(data_pe_consumption, data_liq_consumption, data_oil_consumption, data_gas_consumption,
+                 data_coal_consumption, data_solar_consumption, data_wind_consumption, data_nuclear_consumption,
+                 data_hydro_consumption) %>%
+      purrr::reduce(~dplyr::full_join(.x, .y, by = c("Country", "Year")))
   }
   else if (subtype == "Trade Oil") {
 
@@ -174,8 +167,8 @@ readBP <- function(subtype) {
       mutate(Year := 2020)) %>%
       tidy_data_vertical()
 
-    data <- reshape::merge_recurse(list(data_oil_trade_import, data_oil_trade_export, data_oil_trade_detail))
-
+    data <- list(data_oil_trade_import, data_oil_trade_export, data_oil_trade_detail) %>%
+      purrr::reduce(~dplyr::full_join(.x, .y, by = c("Country", "Year")))
   }
   else if (subtype == "Trade Coal") {
 
@@ -185,8 +178,8 @@ readBP <- function(subtype) {
     data_coal_trade_export <- tidy_data(data_coal_trade[seq(17, 31), ], "Trade|Export|Coal (EJ)",
                                         rows2remove = c("Total|OECD|European|Rest"))
 
-    data <- reshape::merge_recurse(list(data_coal_trade_import, data_coal_trade_export))
-
+    data <- list(data_coal_trade_import, data_coal_trade_export) %>%
+      purrr::reduce(~dplyr::full_join(.x, .y, by = c("Country", "Year")))
   }
   else if (subtype == "Trade Gas") {
 
@@ -354,7 +347,9 @@ readBP <- function(subtype) {
     )
     data_coal_price <- filter(data_coal_price, !is.na(Year))
 
-    data <- reshape::merge_recurse(list(data_oil_spot_crude_price, data_oil_crude_price, data_gas_price, data_coal_price))
+    data <- list(data_oil_spot_crude_price, data_oil_crude_price, data_gas_price, data_coal_price) %>%
+      purrr::reduce(~dplyr::full_join(.x, .y, by = c("Country", "Year")))
+
     data[-1] <- lapply(data[-1], function(x) { suppressWarnings(as.numeric(x)) })
     data <- cbind(Country = "GLO", data)
   }

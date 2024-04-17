@@ -30,7 +30,8 @@ Authors@R: c(
     person("Oliver", "Richters", role = "aut"),
     person("Robin", "Hasse", role = "aut"),
     person("Sophie", "Fuchs", role = "aut"),
-    person("Rahel", "Mandaroux", role = "aut")
+    person("Rahel", "Mandaroux", role = "aut"),
+    person("Johannes", "Koch", role = "aut")
   )
 Description: The mrremind packages contains data preprocessing for the
     REMIND model.
@@ -51,20 +52,18 @@ Imports:
     countrycode,
     data.table,
     dplyr,
+    GDPuc,
     ggplot2,
     Hmisc,
     luscale,
     magrittr,
-    mgsub,
     nnls,
-    plyr,
     purrr,
     quitte (>= 0.3105.0),
     R.utils,
     readODS,
     readr,
     readxl,
-    reshape,
     reshape2,
     rlang,
     rmndt,

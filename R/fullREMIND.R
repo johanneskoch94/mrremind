@@ -2,9 +2,7 @@
 #'
 #' Function that produces the complete regional data set required for the
 #' REMIND model.
-#' @importFrom madrat madratAttach
-#' @importFrom magrittr %>%
-#' @importFrom quitte cartesian madrat_mule
+#'
 #' @author Lavinia Baumstark
 #' @seealso
 #' \code{\link{readSource}},\code{\link{getCalculations}},\code{\link{calcOutput}}
@@ -18,32 +16,36 @@ fullREMIND <- function() {
   rem_years <- seq(2005, 2150, 5)
   rem_years_hist <- seq(1990, 2150, 5)
 
-  madratAttach("edgeTransport")   # enable madrat caching for edgeTransport
+  # Enable madrat caching for edgeTransport
+  madrat::madratAttach("edgeTransport")
 
   #-------------- macro-economic parameters -----------------------------------------------------------
   calcOutput("Population", years = rem_years_hist,    round = 8,  file = "f_pop.cs3r")
-  calcOutput("Labour",     years = rem_years,         round = 8,  file = "f_lab.cs3r")
-  calcOutput("GDP",     years = rem_years_hist,       round = 8,  file = "f_gdp.cs3r")
+  calcOutput("Labour",     years = rem_years_hist,    round = 8,  file = "f_lab.cs3r")
+  calcOutput("GDP",        years = rem_years_hist,    round = 8,  file = "f_gdp.cs3r")
   calcOutput("RatioPPP2MER",                          round = 8,  file = "pm_shPPPMER.cs4r")
   calcOutput("MacroInvestments",                      round = 8,  file = "p01_boundInvMacro.cs4r")
-  calcOutput("FETaxes", subtype = "taxes",            round = 2,  file = "f21_tau_fe_tax.cs4r")
-  calcOutput("FETaxes", subtype = "subsidies",        round = 2,  file = "f21_tau_fe_sub.cs4r")
+  calcOutput("FETaxes",   subtype = "taxes",          round = 2,  file = "f21_tau_fe_tax.cs4r")
+  calcOutput("FETaxes",   subtype = "subsidies",      round = 2,  file = "f21_tau_fe_sub.cs4r")
   calcOutput("TaxConvergence",                        round = 2,  file = "f21_tax_convergence.cs4r")
   calcOutput("TaxLimits", subtype = "maxFeSubsidy",   round = 2,  file = "f21_max_fe_sub.cs4r")
   calcOutput("TaxLimits", subtype = "maxPeSubsidy",   round = 2,  file = "f21_max_pe_sub.cs4r")
   calcOutput("TaxLimits", subtype = "propFeSubsidy",  round = 2,  file = "f21_prop_fe_sub.cs4r")
-  calcOutput("PETaxes", subtype = "subsidies",        round = 2,  file = "f21_tau_pe_sub.cs4r")
-  calcOutput("TaxXport",                              round = 2,  file = "p21_tau_xpres_tax.cs4r")   # not default, overwritten with 0
+  calcOutput("PETaxes",   subtype = "subsidies",      round = 2,  file = "f21_tau_pe_sub.cs4r")
+  # Not default, overwritten with 0
+  calcOutput("TaxXport",                              round = 2,  file = "p21_tau_xpres_tax.cs4r")
   calcOutput("Capital", signif = 4,                               file = "f29_capitalQuantity.cs4r")
-  calcOutput("ExogDemScen",                           round = 8,  file = "p47_exogDemScen.cs4r") # exogenous demand scenarios activated by cm_exogDem_scen
-  calcOutput(
-    type = "Steel_Projections", subtype = "secondary.steel.max.share",
-    file = "p37_steel_secondary_max_share.cs4r",
-    match.steel.historic.values = TRUE, match.steel.estimates = "IEA_ETP",
-    China_Production = readSource(type = "ExpertGuess",
-                                  subtype = "Chinese_Steel_Production",
-                                  convert = FALSE) %>%
-      madrat_mule())
+  # Exogenous demand scenarios activated by cm_exogDem_scen
+  calcOutput("ExogDemScen",                           round = 8,  file = "p47_exogDemScen.cs4r")
+  calcOutput(type = "Steel_Projections",
+             subtype = "secondary.steel.max.share",
+             file = "p37_steel_secondary_max_share.cs4r",
+             match.steel.historic.values = TRUE,
+             match.steel.estimates = "IEA_ETP",
+             China_Production = readSource(type = "ExpertGuess",
+                                           subtype = "Chinese_Steel_Production",
+                                           convert = FALSE) %>%
+               quitte::madrat_mule())
 
 
   calcOutput("FEdemand", signif = 4,                                   file = "f_fedemand.cs4r")
@@ -113,10 +115,9 @@ fullREMIND <- function() {
   calcOutput("ShareIndFE",                            round = 3,  file = "p37_shIndFE.cs3r")
   calcOutput("nonEnergyIndFE",                        round = 8,  file = "f37_fedemand_NonEnergyIndst.cs4r")
   calcOutput("Clinker_to_cement_ratio",               round = 2,  file = "p37_clinker-to-cement-ratio.cs3r")
-  # delete the 'dummy' line
+  # Delete the 'dummy' line
   system(paste0('sed -i "/dummy/d" ', getConfig()$outputfolder, "/p37_clinker-to-cement-ratio.cs3r"))
 
-  calcOutput("Capacity", subtype = "capacityByTech",                   round = 6,  file = "p_histCap.cs3r")  # will be deleted after the merge of REMIND-EU
   calcOutput("Capacity", subtype = "capacityByTech",                   round = 6,  file = "pm_histCap.cs3r")
   calcOutput("Capacity", subtype = "capacityByTech_windoff",           round = 6,  file = "pm_histCap_windoff.cs3r")
   calcOutput("Capacity", subtype = "capacityByPE",                     round = 6,  file = "p_PE_histCap.cs3r")
@@ -170,7 +171,7 @@ fullREMIND <- function() {
   calcOutput("EDGETransport", subtype = "pm_fe_demand_EDGETbased",                 file = "pm_fe_demand_EDGETbased.cs4r")
   calcOutput("EDGETransport", subtype = "annual_mileage",                          file = "annual_mileage.cs4r")
 
-  # not to be aggregated as global
+  # Not to be aggregated as global
   calcOutput("EDGETransport", subtype = "logit_exponent", aggregate = FALSE,       file = "logit_exponent.cs4r")
   calcOutput("EDGETransport", subtype = "ptab4W", aggregate = FALSE,               file = "ptab4W.cs4r")
 

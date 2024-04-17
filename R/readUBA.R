@@ -5,16 +5,13 @@
 #'
 #' @author Falk Benke
 #'
-#' @importFrom readxl read_xlsx
-#' @importFrom tibble tibble
 #' @importFrom dplyr select mutate
 #' @importFrom rlang sym
-#' @importFrom reshape2 melt
-#' @importFrom magclass as.magpie
 #'
 #' @export
 readUBA <- function() {
-  sheets <- tibble(
+
+  sheets <- tibble::tibble(
     sheet = c("THG", "CO2"),
     name = c("Emi|GHG", "Emi|CO2"),
     range = c("B4:AJ54", "B4:AJ54"),
@@ -26,7 +23,7 @@ readUBA <- function() {
   for (i in seq(1:nrow(sheets))) {
 
     tmp <- suppressWarnings(
-      read_xlsx(
+      readxl::read_xlsx(
         path = "2024_03_13_em_entwicklung_in_d_ksg-sektoren_thg_v1.0.xlsx",
         sheet = sheets[["sheet"]][[i]],
         col_names = T,
@@ -49,7 +46,7 @@ readUBA <- function() {
     data <- bind_rows(data, tmp)
   }
 
-  melt(data, id.vars = c("sektor", "unit")) %>%
+  reshape2::melt(data, id.vars = c("sektor", "unit")) %>%
     select("period" = "variable", "unit" = "unit", "value", "variable" = "sektor") %>%
     mutate(
       "region" = "DEU",
