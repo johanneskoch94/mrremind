@@ -2,7 +2,7 @@
 #' @description Rutovitz, J., Dominish, E., & Downes, J. (2015). Calculating global energy sector jobs—2015 methodology update. Institute for Sustainable Futures, University of Technology, Sydney. https://opus.lib.uts.edu.au/bitstream/10453/43718/1/Rutovitzetal2015Calculatingglobalenergysectorjobsmethodology.pdf
 #' @author Aman Malik
 #' @importFrom  tidyr pivot_longer
-#' @importFrom dplyr rename add_row filter_ mutate_ select_ left_join filter mutate
+#' @importFrom dplyr rename add_row left_join filter mutate
 #' @importFrom readr read_csv
 #' @return magpie object of employment factors for different technologies and activities in Jobs/MW (all except fuel_supply) or Jobs/PJ (fuel_supply). Subtype "regional_mult" is a regional multiplier without units.
 #' @param subtype Either "oecd_ef","regional_ef","coal_ef","gas_ef", "regional_mult"
@@ -35,8 +35,6 @@ readRutovitz2015 <- function(subtype) {
                              c("Solar|PV", "Solar|CSP"))) %>%  ## renaming techs
       mutate(across(c(CI, Manf, OM, duration), as.numeric)) %>%
       mutate(Fuel_supply = ifelse(Fuel_supply == "0.001 jobs/GWh final demand", 0.001, Fuel_supply))  %>%
-      # mutate_(CI=~CI/duration) %>% # dividing employment intensity by construction period
-      # mutate_(Manf=~Manf/duration) %>%
       select(-duration)   %>%
       mutate(`Fuel_supply` = ifelse(`Fuel_supply` == "Regional", 0, `Fuel_supply`),
              `Fuel_supply` = as.numeric(`Fuel_supply`)) %>%

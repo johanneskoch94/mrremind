@@ -13,10 +13,6 @@
 #' \dontrun{ a <- readSource(type="RemindCesPrices", subtype = "ccd632d33a")
 #' }
 #' @importFrom magclass as.magpie
-#' @importFrom quitte inline.data.frame
-#' @importFrom dplyr  mutate_ group_by_ summarise_
-#'
-#'
 readRemindCesPrices <- function(subtype = "ccd632d33a") {
 
   #-----FUNCTIONS--------
@@ -37,7 +33,7 @@ readRemindCesPrices <- function(subtype = "ccd632d33a") {
       tmp = gsub("=",",",tmp)
       tmp = grep("price",tmp,value = T)
       tmp = c("period,region,variable,parameter,value", tmp)
-      tmp = inline.data.frame(tmp,sep = ",")
+      tmp = quitte::inline.data.frame(tmp,sep = ",")
 
       data = rbind(data,tmp)
     }
