@@ -6,6 +6,7 @@
 #' @author Antoine Levesque, Robin Hasse
 #'
 convertEdgeBuildings <- function(x, subtype = "FE") {
+
   #---- Functions -------------
   noYearDim <- function(x) setYears(x, NULL)
 
@@ -52,9 +53,9 @@ convertEdgeBuildings <- function(x, subtype = "FE") {
     return(as.magpie(lambda))
   }
 
-
   #---- Parameters and Mappings ------
   rem_years_hist <- seq(1990, 2150, 5)
+  gdpPopScen <- c("SSPs", "SSP2IndiaDEAs")
 
   struct_mapping_path <- toolGetMapping(type = "sectoral", name = "structuremappingIO_outputs.csv",
                                         returnPathOnly = TRUE, where = "mrcommons")
@@ -64,8 +65,11 @@ convertEdgeBuildings <- function(x, subtype = "FE") {
   struct_mapping <- struct_mapping[!is.na(struct_mapping$weight_convertEDGE), ]
   struct_mapping <- unique(struct_mapping[c("weight_convertEDGE", "EDGEitems")])
 
-
-  # manually duplicate SSP2 to create SSP2_highDemDEU until it is read in directly in readEdgeBuildings
+  # Select scenarios
+  scenarios <- list(SSPs  = paste0("SSP", 1:5),
+                    SSP2s = paste0("SSP2", c("_lowEn", "_NAV_all", "IndiaMedium", "IndiaHigh")))
+  x <- mselect(x, scenario = Reduce(c, scenarios))
+  # Manually duplicate SSP2 to create SSP2_highDemDEU until it is read in directly in readEdgeBuildings
   x <- mbind(x, setItems(x[, , "SSP2"], 3.1, "SSP2_highDemDEU"))
 
   if (subtype == "FE") {
@@ -85,9 +89,8 @@ convertEdgeBuildings <- function(x, subtype = "FE") {
 
     #--- Load the Weights
     #--- First load the GDP data. Set average2020 to False to get yearly data as far as possible.
-    wg <- calcOutput("GDP", scenario = c("SSPs", "SDPs"), naming = "scenario", average2020 = FALSE, aggregate = FALSE)
-
-    # duplicate SSP2 for SSP2_lowEn and SSP2_highDemDEU for Navigate and Campaigners scenarios
+    wg <- calcOutput("GDP", scenario = c("SSPs", "SSP2IndiaDEAs"), average2020 = FALSE, aggregate = FALSE)
+    # Add scenarios by duplication
     wg <- duplScens(wg)
 
     #--- Then load the final energy data
@@ -178,21 +181,23 @@ convertEdgeBuildings <- function(x, subtype = "FE") {
     result[reg_TUR, getYears(WH_growth), getNames(WH_growth)] <-
       result[reg_TUR, getYears(WH_growth), getNames(WH_growth)] + WH_growth_agg
 
-  } else if (subtype == "Floorspace") {
-    mappingfile <- toolGetMapping(type = "regional", name = "regionmappingEDGE.csv",
-                                  returnPathOnly = TRUE, where = "mappingfolder")
+  }
+
+  if (subtype == "Floorspace") {
+    mappingfile <- toolGetMapping(type = "regional",
+                                  name = "regionmappingEDGE.csv",
+                                  returnPathOnly = TRUE,
+                                  where = "mappingfolder")
     mapping <- utils::read.csv2(mappingfile)
     region_col <- which(names(mapping) == "RegionCodeEUR_ETP")
     iso_col <- which(names(mapping) == "CountryCode")
 
     wp <- calcOutput("Population",
-                     scenario = c("SSPs", "SDPs"),
-                     naming = "scenario",
+                     scenario = c("SSPs", "SSP2IndiaDEAs"),
                      years = rem_years_hist,
                      aggregate = FALSE)
     getSets(wp) <- gsub("variable", "scenario", getSets(wp))
-
-    # duplicate SSP2 for SSP2_lowEn and SSP2_highDemDEU for Navigate and Campaigners scenarios
+    # Add scenarios by duplication
     wp <- duplScens(wp)
 
     x <- time_interpolate(x, interpolated_year = rem_years_hist, extrapolation_type = "constant")

@@ -2,16 +2,19 @@
 % Please edit documentation in R/readStationary.R
 \name{readStationary}
 \alias{readStationary}
+\alias{convertStationary}
 \title{Load Stationary File as magclass object}
 \usage{
 readStationary()
+
+convertStationary(x)
+}
+\arguments{
+\item{x}{MAgPIE object returned from readStationary}
 }
 \value{
 magclass object
 }
 \description{
 Load Stationary File as magclass object
-}
-\author{
-Antoine Levesque, Robin Hasse
 }

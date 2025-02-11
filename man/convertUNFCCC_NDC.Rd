@@ -20,6 +20,3 @@ Converts conditional and unconditional capacity targets into total capacity (GW)
 the Generation targets are similar to the capacity targets but include the capacity factors,
 the Emissions targets are the total (except land CO2) emissions in the target year
 }
-\author{
-Aman Malik, Christoph Bertram, Oliver Richters
-}

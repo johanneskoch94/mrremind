@@ -5,32 +5,36 @@
 #' that of Japan in 2010, at speeds that vary across scenarios. The final capital stocks are the product
 #' of the capital intensities and the gdp scenarios from [mrdrivers].
 #'
+#' @param scenario GDP and pop scenarios. Passed to [mrdrivers::calcGDP()].
 #' @export
 #' @seealso \itemize{
 #'   \item See the vignette \code{vignette("scenarios", "mrdrivers")} for information on the GDP scenarios.
 #'   \item [readPWT()] for information on the PWT version used.
 #' }
 #' @inherit madrat::calcOutput return
-calcCapital <- function() {
-
+calcCapital <- function(scenario) {
   # Get capital intensities (capital over GDP) from PWT
   kPWT <- readSource("PWT")[, , "rkna"]
   gdpPWT <- readSource("PWT")[, , "rgdpna"]
   kIntPWT <- kPWT / setNames(gdpPWT, NULL)
 
-  # Get GDP from mrdrivers (which differs from GDP in PWT)
-  gdp <- calcOutput("GDP",
-                    scenario = c("SSPs", "SDPs"),
-                    naming = "scenario",
-                    aggregate = FALSE,
-                    years = seq(1995, 2150, 5))
+  # Get GDP from mrdrivers (which differs from GDP in PWT). Make sure SSP2 is always returned.
+  gdp <- calcOutput("GDP", scenario = c("SSP2", scenario), aggregate = FALSE, years = seq(1995, 2150, 5))
 
   # Define reference capital intensity, and the convergence time in years, of the countries capital intensities towards
   # that reference, for the different GDP scenarios. The convergence assumptions should follow the SSP narratives.
   # Convergence starts after 2010.
   kIntRef <- kIntPWT["JPN", 2010, ] %>% as.numeric()
-  convTime <- c("SSP1" = 150, "SSP2" = 250, "SSP3" = 150, "SSP4" = 300, "SSP5" = 150,
-                "SDP" = 150, "SDP_EI" = 150, "SDP_RC" = 150, "SDP_MC" = 150)
+  convTime <- c("SSP1" = 150, "SSP2" = 250, "SSP3" = 150, "SSP4" = 300, "SSP5" = 150)
+
+  # If required, add any assumption on convergence times for non SSP scenarios. By default use the SSP2 convTime.
+  if (any(! getNames(gdp) %in% names(convTime))) {
+    scens <- getNames(gdp)[! getNames(gdp) %in% names(convTime)]
+    message(glue::glue("Adding {paste(scens, collapse = ', ')} assumptions as copies of SSP2."))
+    addConvTime <- purrr::map(scens, ~`names<-`(convTime["SSP2"], .x)) %>% purrr::list_c()
+    convTime <- mbind(convTime, addConvTime)
+  }
+
 
   # Create kInt magpie object with the same dimension as gdp, and assign the PWT capital intensities for the
   # historic years until 2010.
@@ -60,8 +64,8 @@ calcCapital <- function() {
 
   # Use regional average for countries missing data
   ## To get regional aggregate values for all countries: first aggregate, using only non-missing countries and
-  ## partrel = TRUE, then disaggregate again.
-  nmc <- getItems(kInt, dim = 1)[!is.nan(kInt[, 2010, "SSP2"])]
+  ## partrel = TRUE, then disaggregate again. (Faster than toolFillWithRegionAvg).
+  nmc <- getItems(kInt, dim = 1)[!is.nan(kInt[, 2010, ])]
   map <- toolGetMapping("regionmappingH12.csv")
   kIntReg <- toolAggregate(kInt[nmc, , ], rel = map, weight = gdp[nmc, , ], partrel = TRUE) %>%
     toolAggregate(rel = map, from = "RegionCode", to = "CountryCode")

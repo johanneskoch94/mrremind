@@ -18,7 +18,8 @@ Reads excel sheet with NDC (Nationally Determined Contributions)
 data on different policy targets (capacity, emission, and share targets) with different variations
 }
 \details{
-Country name is ISO coded. Capacity/Additional Capacity targets are in GW. Generation/Production targets are in GWh.
+Country name is ISO coded. Capacity/Additional Capacity targets are in GW. Generation/Production targets
+are in GWh.
 }
 \author{
 Aman Malik, Christoph Bertram, Oliver Richters, Sophie Fuchs, Rahel Mandaroux

@@ -18,42 +18,16 @@ fullREMIND <- function() {
   gdpPopScen <- c("SSPs", "SSP2IndiaDEAs")
 
   #-------------- macro-economic parameters -----------------------------------------------------------
+  calcOutput("Population", scenario = gdpPopScen, years = rem_years_hist, round = 8, file = "f_pop.cs3r")
   calcOutput("Population",
              scenario = gdpPopScen,
-             naming = "scenario",
-             years = rem_years_hist,
-             round = 8,
-             file = "f_pop.cs3r")
-
-  calcOutput("Population",
-             scenario = gdpPopScen,
-             naming = "scenario",
              aggregate = FALSE,
              years = rem_years_hist,
              round = 8,
              file = "f50_pop.cs3r")
-
-  calcOutput("Labour",
-             scenario = gdpPopScen,
-             naming = "scenario",
-             years = rem_years_hist,
-             round = 8,
-             file = "f_lab.cs3r")
-
-  calcOutput("GDP",
-             scenario = gdpPopScen,
-             naming = "scenario",
-             years = rem_years_hist,
-             round = 8,
-             file = "f_gdp.cs3r")
-
-  calcOutput("GDP",
-             scenario = gdpPopScen,
-             naming = "scenario",
-             aggregate = FALSE,
-             years = rem_years_hist,
-             round = 8,
-             file = "f50_gdp.cs3r")
+  calcOutput("Labour", scenario = gdpPopScen, years = rem_years_hist, round = 8, file = "f_lab.cs3r")
+  calcOutput("GDP", scenario = gdpPopScen, years = rem_years_hist, round = 8, file = "f_gdp.cs3r")
+  calcOutput("GDP", scenario = gdpPopScen, years = rem_years_hist, round = 8, aggregate = FALSE, file = "f50_gdp.cs3r")
 
   calcOutput("RatioPPP2MER",                          round = 8,  file = "pm_shPPPMER.cs4r")
   calcOutput("MacroInvestments",                      round = 8,  file = "p01_boundInvMacro.cs4r")
@@ -68,19 +42,21 @@ fullREMIND <- function() {
   calcOutput("TaxLimits", subtype = "maxPeSubsidy",   round = 2,  file = "f21_max_pe_sub.cs4r")
   calcOutput("TaxLimits", subtype = "propFeSubsidy",  round = 2,  file = "f21_prop_fe_sub.cs4r")
   calcOutput("PETaxes", subtype = "subsidies",        round = 2,  file = "f21_tau_pe_sub.cs4r")
-  calcOutput("Capital", signif = 4,                               file = "f29_capitalQuantity.cs4r")
+  calcOutput("Capital", scenario = gdpPopScen,        signif = 4, file = "f29_capitalQuantity.cs4r")
 
-  calcOutput("ExogDemScen",                           round = 8,  file = "p47_exogDemScen.cs4r") # exogenous demand scenarios activated by cm_exogDem_scen
+  # Exogenous demand scenarios activated by cm_exogDem_scen
+  calcOutput("ExogDemScen",                           round = 8,  file = "p47_exogDemScen.cs4r")
   calcOutput(
-    type = "Steel_Projections", subtype = "secondary.steel.max.share",
+    type = "Steel_Projections",
+    subtype = "secondary.steel.max.share",
     file = "p37_steel_secondary_max_share.cs4r",
-    match.steel.historic.values = TRUE, match.steel.estimates = "IEA_ETP",
+    match.steel.historic.values = TRUE,
+    match.steel.estimates = "IEA_ETP",
     China_Production = readSource(type = "ExpertGuess",
                                   subtype = "Chinese_Steel_Production",
                                   convert = FALSE) %>%
-      quitte::madrat_mule())
-
-
+      quitte::madrat_mule()
+  )
   calcOutput("FEdemand", signif = 4,                                   file = "f_fedemand.cs4r")
   calcOutput("FeDemandBuildings", subtype = "FE_buildings", round = 8, file = "f_fedemand_build.cs4r")
   calcOutput("FeDemandBuildings", subtype = "UE_buildings", round = 8, file = "f36_uedemand_build.cs4r")
@@ -94,13 +70,13 @@ fullREMIND <- function() {
   calcOutput("CO2Prices",                                   round = 2, file = "pm_taxCO2eqHist.cs4r")
   calcOutput("RiskPremium",                                 round = 6, file = "pm_risk_premium.cs4r")
   calcOutput("NetForeignAsset",                             round = 6, file = "pm_nfa_start.cs4r")
-  calcOutput("Theil",                                       round = 8, file = "f_ineqTheil.cs4r")
+  calcOutput("Theil", scenario = gdpPopScen,                round = 8, file = "f02_ineqTheil.cs4r")
   calcOutput("DevelopmentState",                            round = 4, file = "f_developmentState.cs3r")
   calcOutput("TCdamage", subtype = "const",                 round = 8, file = "f50_TC_df_const.cs4r", aggregate = FALSE)
   calcOutput("TCdamage", subtype = "tasK",                  round = 8, file = "f50_TC_df_tasK.cs4r", aggregate = FALSE)
-  calcOutput("KLWdamage", subtype = "beta1",                 round = 8, file = "f50_KLW_df_beta1.cs4r", aggregate = FALSE)
-  calcOutput("KLWdamage", subtype = "beta2",                  round = 8, file = "f50_KLW_df_beta2.cs4r", aggregate = FALSE)
-  calcOutput("KLWdamage", subtype = "maxGMT",                  round = 8, file = "f50_KLW_df_maxGMT.cs4r", aggregate = FALSE)
+  calcOutput("KLWdamage", subtype = "beta1",                round = 8, file = "f50_KLW_df_beta1.cs4r", aggregate = FALSE)
+  calcOutput("KLWdamage", subtype = "beta2",                round = 8, file = "f50_KLW_df_beta2.cs4r", aggregate = FALSE)
+  calcOutput("KLWdamage", subtype = "maxGMT",               round = 8, file = "f50_KLW_df_maxGMT.cs4r", aggregate = FALSE)
 
   #-------------- emission parameter ------------------------------------------------------------------
   calcOutput("EmissionsTe",                                                     round = 5, file = "p_boundEmi.cs4r")
@@ -204,11 +180,9 @@ fullREMIND <- function() {
   calcOutput("EDGETransport", subtype = "timeValueCosts",                          file = "timeValueCosts.cs4r")
 
   #---------------policy parameters--------------------------------------------------------------------
-  calcOutput("EmiTarget", sources = "UNFCCC_NDC", subtype = "Ghgshare2005", round = 4, file = "fm_2005shareTarget.cs3r")
-  calcOutput("EmiTarget", sources = "UNFCCC_NDC", subtype = "Ghgfactor",    round = 4, file = "fm_factorTargetyear.cs3r")
-  calcOutput("EmiTarget", sources = "UNFCCC_NDC", subtype = "Ghghistshare", round = 4, file = "fm_histShare.cs3r")
-  calcOutput("CapTarget", sources = "UNFCCC_NDC",                           round = 4, file = "f40_NDC.cs3r")
-  calcOutput("CapTarget", sources = "REN21",                                round = 4, file = "f40_REN21.cs4r")
+  calcOutput("EmiTarget", subtype = "Ghgshare2005", scenario = gdpPopScen,  round = 4, file = "fm_2005shareTarget.cs3r")
+  calcOutput("EmiTarget", subtype = "Ghgfactor",    scenario = gdpPopScen , round = 4, file = "fm_factorTargetyear.cs3r")
+  calcOutput("EmiTarget", subtype = "Ghghistshare", scenario = gdpPopScen,  round = 4, file = "fm_histShare.cs3r")
   calcOutput("CapTarget", sources = "UNFCCC_NDC+REN21+CHN_NUC",             round = 4, file = "f40_NDC+REN21+CHN_NUC.cs3r")
   calcOutput("SharedTarget", subtype = "FErenewablesShare",                 round = 3, file = "f40_FE_RenShare.cs4r")
   calcOutput("ExpertGuess", subtype = "tradeConstraints", aggregate = FALSE,           file = "p24_trade_constraints.cs4r")

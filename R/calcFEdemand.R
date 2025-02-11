@@ -1,9 +1,10 @@
 #' Calculates Final Energy Demand for Industry and Buildings
+#' @param scenario GDP and pop scenarios. Passed to [mrdrivers::calcGDP()].
 #' @author Falk Benke
-calcFEdemand <- function() {
+calcFEdemand <- function(scenario) {
 
   feBuildings <- calcOutput("FeDemandBuildings", subtype = "FE", warnNA = FALSE, aggregate = FALSE)
-  feIndustry <- calcOutput("FeDemandIndustry", warnNA = FALSE, aggregate = FALSE)
+  feIndustry <- calcOutput("FeDemandIndustry", scenario = scenario, warnNA = FALSE, aggregate = FALSE)
 
   # duplicate scenarios ----
   # add Navigate and Campaigners scenarios to industry and transport to match buildings scenarios by duplication

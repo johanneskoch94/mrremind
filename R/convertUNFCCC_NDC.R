@@ -1,22 +1,21 @@
 #' Policy targets for NDCs from UNFCCC_NDC
+#'
 #' @description Converts conditional and unconditional capacity targets into total capacity (GW) in target year
 #' the Generation targets are similar to the capacity targets but include the capacity factors,
 #' the Emissions targets are the total (except land CO2) emissions in the target year
+#'
 #' @param x MAgPIE object to be converted
 #' @param subtype Capacity_YYYY_cond or Capacity_YYYY_uncond for Capacity Targets, Emissions_YYYY_cond or
-#' Emissions_YYYY_uncond for Emissions targets, with YYYY NDC version year
+#'   Emissions_YYYY_uncond for Emissions targets, with YYYY NDC version year
 #' @return Magpie object with Total Installed Capacity (GW) targets, target years differ depending upon the database.
-#' @author Aman Malik, Christoph Bertram, Oliver Richters
-
-convertUNFCCC_NDC <- function(x, subtype) {                                # nolint: object_name_linter.
+#'
+convertUNFCCC_NDC <- function(x, subtype) { # nolint: object_name_linter.
   if (grepl("Capacity", subtype, fixed = TRUE)) {
-    # for testing: subtype="Capacity_2021_cond"; x <- readSource("UNFCCC_NDC", subtype=subtype, convert=FALSE);
-
     # add missing magclass columns if they were not in the data provided to avoid index out of bound errors
     targetTypes <- c("AC-Absolute", "Production-Absolute", "TIC-Absolute", "FE-Production-Share")
     if (FALSE %in% (getNames(x[, , ], fulldim = TRUE)$`Type of target` %in% targetTypes)) {
       cat("Table read from UNFCCC_NDC contains unknown target types: ",
-      getNames(x[, , ], fulldim = TRUE)$`Type of target`[!(getNames(x[, , ], fulldim = TRUE)$`Type of target` %in% targetTypes)])
+          getNames(x[, , ], fulldim = TRUE)$`Type of target`[!(getNames(x[, , ], fulldim = TRUE)$`Type of target` %in% targetTypes)])
     }
     techList <- c("Wind", "Solar", "Hydro", "Nuclear", "Biomass")
     listAllCombinations <- do.call(paste, c(expand.grid(getNames(x[, , ], fulldim = TRUE)$Conditionality, targetTypes, techList), sep = "."))
@@ -157,13 +156,12 @@ convertUNFCCC_NDC <- function(x, subtype) {                                # nol
     #  Even if there is one +ve production absolute value for Hydro but all maxprod are zero
     for (r in names(final)) {
       if (any(x_mod5[r, , "Production-Absolute.Hydro"] != 0) &
-         all(data_combined[r, , "Hydro.maxprod"] == 0) | any(data_combined[r, , "Hydro.maxprod"] < 0))
+          all(data_combined[r, , "Hydro.maxprod"] == 0) | any(data_combined[r, , "Hydro.maxprod"] < 0))
         x_mod5[r, , "Production-Absolute.Hydro"] <- 0
     }
-
     for (t in c("Solar", "Wind", "Hydro")) {
       data_sel <- data_combined[, , t]
-      data_in_use <-  data_sel[, , "maxprod"] / data_sel[, , "nur"]
+      data_in_use <- data_sel[, , "maxprod"] / data_sel[, , "nur"]
       for (y in targetYears) {
         final[] <- 0
         for (r in names(final)) {
@@ -179,51 +177,52 @@ convertUNFCCC_NDC <- function(x, subtype) {                                # nol
             if (data_sel[r, , "maxprod"][, , loc] > tmp_target[1]) {
               final[r] <- tmp_target[1] / (8760 * data_sel[r, , "nur"][, , loc])
             } else {
-            tmp_target[2] <- tmp_target[1] - data_sel[r, , "maxprod"][, , loc]
-            if (data_sel[r, , "maxprod"][, , loc + 1] > tmp_target[2]) {
-              final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + tmp_target[1] / data_sel[r, , "nur"][, , loc + 1])
-            } else {
-            tmp_target[3] <- tmp_target[2] - data_sel[r, , "maxprod"][, , loc + 1]
-            if (data_sel[r, , "maxprod"][, , loc + 2] > tmp_target[3]) {
-              final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1]
-                                    + tmp_target[2] / data_sel[r, , "nur"][, , loc + 2])
-            } else {
-            tmp_target[4] <- tmp_target[3] - data_sel[r, , "maxprod"][, , loc + 2]
-            if (data_sel[r, , "maxprod"][, , loc + 3] > tmp_target[4]) {
-              final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1] + data_in_use[r, , ][, , loc + 2] +
-                                      tmp_target[3] / data_sel[r, , "nur"][, , loc + 3])
-              final[r] <- tmp_target[1]
-            } else {
-            tmp_target[5] <- tmp_target[4] - data_sel[r, , "maxprod"][, , loc + 3]
-            if (data_sel[r, , "maxprod"][loc + 4] > tmp_target[5]) {
-              final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1] + data_in_use[r, , ][, , loc + 2] +
-                                     data_in_use[r, , ][, , loc + 3] + tmp_target[4] / data_sel[r, , "nur"][, , loc + 4])
-            } else {
-            tmp_target[6] <- tmp_target[5] - data_sel[r, , "maxprod"][, , loc + 4]
-            if (data_sel[r, , "maxprod"][loc + 5] > tmp_target[6]) {
-              final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1] + data_in_use[r, , ][, , loc + 2] +
-                                      data_in_use[r, , ][, , loc + 3] + data_in_use[r, , ][, , loc + 4] +
-                                      tmp_target[5] / data_sel[r, , "nur"][, , loc + 5])
-            }
-            }
-            }
-            }
-            }
+              tmp_target[2] <- tmp_target[1] - data_sel[r, , "maxprod"][, , loc]
+              if (data_sel[r, , "maxprod"][, , loc + 1] > tmp_target[2]) {
+                final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + tmp_target[1] / data_sel[r, , "nur"][, , loc + 1])
+              } else {
+                tmp_target[3] <- tmp_target[2] - data_sel[r, , "maxprod"][, , loc + 1]
+                if (data_sel[r, , "maxprod"][, , loc + 2] > tmp_target[3]) {
+                  final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1]
+                                            + tmp_target[2] / data_sel[r, , "nur"][, , loc + 2])
+                } else {
+                  tmp_target[4] <- tmp_target[3] - data_sel[r, , "maxprod"][, , loc + 2]
+                  if (data_sel[r, , "maxprod"][, , loc + 3] > tmp_target[4]) {
+                    final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1] + data_in_use[r, , ][, , loc + 2] +
+                                                tmp_target[3] / data_sel[r, , "nur"][, , loc + 3])
+                    final[r] <- tmp_target[1]
+                  } else {
+                    tmp_target[5] <- tmp_target[4] - data_sel[r, , "maxprod"][, , loc + 3]
+                    if (data_sel[r, , "maxprod"][loc + 4] > tmp_target[5]) {
+                      final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1] + data_in_use[r, , ][, , loc + 2] +
+                                                  data_in_use[r, , ][, , loc + 3] + tmp_target[4] / data_sel[r, , "nur"][, , loc + 4])
+                    } else {
+                      tmp_target[6] <- tmp_target[5] - data_sel[r, , "maxprod"][, , loc + 4]
+                      if (data_sel[r, , "maxprod"][loc + 5] > tmp_target[6]) {
+                        final[r] <- (1 / 8760) * (data_in_use[r, , ][, , loc] + data_in_use[r, , ][, , loc + 1] + data_in_use[r, , ][, , loc + 2] +
+                                                    data_in_use[r, , ][, , loc + 3] + data_in_use[r, , ][, , loc + 4] +
+                                                    tmp_target[5] / data_sel[r, , "nur"][, , loc + 5])
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
         x_capacity_prod_swh[, y, t] <- final
       }
     }
-
-    x_capacity_gen <- mbind(x_capacity_prod_swh[, , c("Solar", "Wind", "Hydro")], x_capacity_prod_nb[, , c("Biomass", "Nuclear")])
-    x_capacity[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")] <- pmax(x_capacity_abs[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")],
-                                                                   x_capacity_gen[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")],
-                                                                   x_capacity_tic[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")])
-    # x_capacity[,,c("Solar","Wind")] <- pmax(x_capacity_copy[,,c("Solar","Wind")],x_capacity[,,c("Solar","Wind")])
+    x_capacity_gen <- mbind(x_capacity_prod_swh[, , c("Solar", "Wind", "Hydro")],
+                            x_capacity_prod_nb[, , c("Biomass", "Nuclear")])
+    x_capacity[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")] <- pmax(
+      x_capacity_abs[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")],
+      x_capacity_gen[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")],
+      x_capacity_tic[, , c("Solar", "Wind", "Hydro", "Biomass", "Nuclear")]
+    )
     x_capacity[, , "Hydro"] <- x_capacity_gen[, , "Hydro"]
 
-    #  # Making sure that targets in subsequent years are always same or greater than the proceeding year
+    # Making sure that targets in subsequent years are always same or greater than the proceeding year
     for (r in getItems(x_mod5, dim = "region")) {
       for (t in techList) {
         for (i in utils::head(targetYears, -1)) {
@@ -236,19 +235,19 @@ convertUNFCCC_NDC <- function(x, subtype) {                                # nol
       }
     }
     # countries not in the database
-    rest_regions <- getItems(hist_cap, dim = "Country/area")[!(getItems(hist_cap, dim = "Country/area") %in% getItems(x_capacity, dim = "region"))]
+    rest_regions <- getItems(hist_cap, dim = "Country/area")[!(getItems(hist_cap, dim = "Country/area") %in%
+                                                                 getItems(x_capacity, dim = "region"))]
     x_other <- new.magpie(rest_regions, targetYears, techList)
     x_other[, , c("Wind", "Solar")]  <- setYears(hist_cap[rest_regions, 2015, c("Solar", "Wind")])
     x_other[, , "Nuclear"] <- 0
     x_other[, , "Biomass"] <- setYears(hist_cap[rest_regions, 2015, "Bioenergy"])
-    x_other[, , "Hydro"] <- setYears(hist_cap[rest_regions, 2015, "Renewable hydropower"]) * setYears(cf_hydro[rest_regions, , ])
+    x_other[, , "Hydro"] <- setYears(hist_cap[rest_regions, 2015, "Renewable hydropower"]) *
+      setYears(cf_hydro[rest_regions, , ])
 
     x_final <- magpiesort(mbind(x_capacity, x_other))
     x_final[is.na(x_final)] <- 0
-    x <- toolCountryFill(x_final, fill = NA, verbosity = 2) # will be returned
+    x <- toolCountryFill(x_final, fill = NA, verbosity = 2)
     getNames(x) <- c("wind", "spv", "hydro", "tnrs", "bioigcc")
-    # end subtype contains Capacity
-
 
   } else if (grepl("Emissions", subtype, fixed = TRUE)) { # calculate emissions in target year relative to 2005 emissions
 
@@ -261,16 +260,16 @@ convertUNFCCC_NDC <- function(x, subtype) {                                # nol
     gwpN2O <- 265 # "Global Warming Potentials of N2O, AR5 WG1 CH08 Table 8.7"     /265/
     # calculate GHG total of CO2, CH4 and N2O [unit Mt CO2eq]
     ghg <- ceds[, seq(1990, 2015, 1), c("Emi|CO2|Energy and Industrial Processes (Mt CO2/yr)")] +
-      +gwpN2O / 1000 * dimSums(ceds[, seq(1990, 2015, 1), c("Emi|N2O|Energy and Industrial Processes (kt N2O/yr)",
-                                                    "Emi|N2O|Land Use|Agriculture and Biomass Burning (kt N2O/yr)",
-                                                    "Emi|N2O|Land Use|Forest Burning (kt N2O/yr)",
-                                                    "Emi|N2O|Land Use|Grassland Burning (kt N2O/yr)",
-                                                    "Emi|N2O|Waste (kt N2O/yr)")], dim = 3) +
-      +gwpCH4 * dimSums(ceds[, seq(1990, 2015, 1), c("Emi|CH4|Energy and Industrial Processes (Mt CH4/yr)",
-                                               "Emi|CH4|Land Use|Agriculture and Biomass Burning (Mt CH4/yr)",
-                                               "Emi|CH4|Land Use|Forest Burning (Mt CH4/yr)",
-                                               "Emi|CH4|Land Use|Grassland Burning (Mt CH4/yr)",
-                                               "Emi|CH4|Waste (Mt CH4/yr)")], dim = 3)
+      gwpN2O / 1000 * dimSums(ceds[, seq(1990, 2015, 1), c("Emi|N2O|Energy and Industrial Processes (kt N2O/yr)",
+                                                           "Emi|N2O|Land Use|Agriculture and Biomass Burning (kt N2O/yr)",
+                                                           "Emi|N2O|Land Use|Forest Burning (kt N2O/yr)",
+                                                           "Emi|N2O|Land Use|Grassland Burning (kt N2O/yr)",
+                                                           "Emi|N2O|Waste (kt N2O/yr)")], dim = 3) +
+      gwpCH4 * dimSums(ceds[, seq(1990, 2015, 1), c("Emi|CH4|Energy and Industrial Processes (Mt CH4/yr)",
+                                                    "Emi|CH4|Land Use|Agriculture and Biomass Burning (Mt CH4/yr)",
+                                                    "Emi|CH4|Land Use|Forest Burning (Mt CH4/yr)",
+                                                    "Emi|CH4|Land Use|Grassland Burning (Mt CH4/yr)",
+                                                    "Emi|CH4|Waste (Mt CH4/yr)")], dim = 3)
 
     # Future GDP values
     gdp <- calcOutput("GDP", scenario = c("SSPs", "SDPs"), naming = "scenario", aggregate = FALSE)
@@ -356,14 +355,14 @@ convertUNFCCC_NDC <- function(x, subtype) {                                # nol
     for (year in getYears(reductionData)) { # assign EUR NDC goal to all EUR28 countries
       if (!is.na(reductionData["EUR", year, uncond_or_cond])[1]) {  # check whether a target exists
         if (allowedType[reductionData["EUR", year, "Type"]] == "GHG") {
-             ghggoal <- (1 + reductionData["EUR", year, uncond_or_cond]) * setYears(ghg[EUR_NDC_countries, min(reductionData["EUR", year, "Reference_Year"], max(getYears(ghg, as.integer = TRUE))), ], NULL)
-             ghgfactor[EUR_NDC_countries, year, ] <- ghggoal / setYears(ghg[EUR_NDC_countries, 2005, ], NULL)
+          ghggoal <- (1 + reductionData["EUR", year, uncond_or_cond]) * setYears(ghg[EUR_NDC_countries, min(reductionData["EUR", year, "Reference_Year"], max(getYears(ghg, as.integer = TRUE))), ], NULL)
+          ghgfactor[EUR_NDC_countries, year, ] <- ghggoal / setYears(ghg[EUR_NDC_countries, 2005, ], NULL)
         } else if (allowedType[reductionData["EUR", year, "Type"]] == "GHG-fixed-total") {
-             ghg_EUR_2005 <- sum(setYears(ghg[EUR_NDC_countries, 2005, ], NULL))
-             ghgfactor[EUR_NDC_countries, year, ] <- reductionData["EUR", year, uncond_or_cond] / ghg_EUR_2005
+          ghg_EUR_2005 <- sum(setYears(ghg[EUR_NDC_countries, 2005, ], NULL))
+          ghgfactor[EUR_NDC_countries, year, ] <- reductionData["EUR", year, uncond_or_cond] / ghg_EUR_2005
         } else {
-            warning("Calculation assumes EU target is GHG or GHG-fixed-total, but database says ",
-                    reductionData["EUR", year, "Type"], ". Please check or exjust calcEmiTarget!")
+          warning("Calculation assumes EU target is GHG or GHG-fixed-total, but database says ",
+                  reductionData["EUR", year, "Type"], ". Please check or exjust calcEmiTarget!")
         }
       }
     }
