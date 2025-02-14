@@ -65,8 +65,8 @@ calcCapital <- function(scenario) {
   # Use regional average for countries missing data
   ## To get regional aggregate values for all countries: first aggregate, using only non-missing countries and
   ## partrel = TRUE, then disaggregate again. (Faster than toolFillWithRegionAvg).
-  nmc <- getItems(kInt, dim = 1)[!is.nan(kInt[, 2010, ])]
-  map <- toolGetMapping("regionmappingH12.csv")
+  nmc <- getItems(kInt, dim = 1)[!is.nan(kInt[, 2010, "SSP2"])]
+  map <- toolGetMapping("regionmappingH12.csv", where = "mappingfolder", type = "regional")
   kIntReg <- toolAggregate(kInt[nmc, , ], rel = map, weight = gdp[nmc, , ], partrel = TRUE) %>%
     toolAggregate(rel = map, from = "RegionCode", to = "CountryCode")
   mc <- setdiff(getItems(kInt, dim = 1), nmc)
