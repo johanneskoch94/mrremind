@@ -8,9 +8,6 @@ calcFeDemandBuildings <- function(subtype, scenario) {
   if (!subtype %in% c("FE", "FE_buildings", "UE_buildings")) {
     stop(paste0("Unsupported subtype: ", subtype))
   }
-  if (!all(scenario %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario)) {
-    stop(paste0("Unsupported scenario: ", scenario))
-  }
 
   # Replace calls to SSPs and SSP2IndiaDEAs to individual scenarios, if present
   if ("SSPs" %in% scenario) {
