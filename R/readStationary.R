@@ -28,7 +28,7 @@ convertStationary <- function(x, subset) {
   # Select scenarios
   x[is.na(x)] <- 0
   getSets(x) <- c("region", "year", "scenario", "item")
-  xAdd <- purrr::map(subset[!subset %in% getNames(x)], function(scen) {
+  xAdd <- purrr::map(subset[!subset %in% getNames(x, dim = "scenario")], function(scen) {
     message(glue::glue("Adding {scen} EdgeBuildings data as copy of SSP2."))
     setItems(x[, , "SSP2"], "scenario", scen)
   }) %>%

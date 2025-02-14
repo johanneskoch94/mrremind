@@ -18,7 +18,7 @@ convertEdgeBuildings <- function(x, subtype, subset) {
   struct_mapping <- unique(struct_mapping[c("weight_convertEDGE", "EDGEitems")])
 
   # Select scenarios
-  xAdd <- purrr::map(subset[!subset %in% getNames(x)], function(scen) {
+  xAdd <- purrr::map(subset[!subset %in% getNames(x, dim = "scenario")], function(scen) {
     message(glue::glue("Adding {scen} stationary data as copy of SSP2."))
     setItems(x[, , "SSP2"], 3.1, scen)
   }) %>%
