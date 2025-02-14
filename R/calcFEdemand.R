@@ -1,7 +1,7 @@
 #' Calculates Final Energy Demand for Industry and Buildings
 #' @param scenario GDP and pop scenarios. Passed to [mrdrivers::calcGDP()].
 #' @author Falk Benke
-calcFEdemand <- function(scenario) {
+calcFEdemand <- function(scenario = c("SSPs", "SSP2IndiaDEAs", "SSP2_lowEn", "SSP2_highDemDEU", "SSP2_NAV_all")) {
 
   feBuildings <- calcOutput("FeDemandBuildings",
                             subtype = "FE",
