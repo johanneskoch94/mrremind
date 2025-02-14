@@ -32,7 +32,7 @@ calcCapital <- function(scenario) {
     scens <- getNames(gdp)[! getNames(gdp) %in% names(convTime)]
     message(glue::glue("Adding {paste(scens, collapse = ', ')} assumptions as copies of SSP2."))
     addConvTime <- purrr::map(scens, ~`names<-`(convTime["SSP2"], .x)) %>% purrr::list_c()
-    convTime <- mbind(convTime, addConvTime)
+    convTime <- c(convTime, addConvTime)
   }
 
 
