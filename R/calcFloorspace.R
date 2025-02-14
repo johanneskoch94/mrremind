@@ -9,9 +9,17 @@
 #'
 #' @export
 #'
-calcFloorspace <- function(onlyTotal = FALSE) {
+calcFloorspace <- function(scenario, onlyTotal = FALSE) {
 
-  data <- readSource("EdgeBuildings", subtype = "Floorspace")
+  # Replace calls to SSPs and SSP2IndiaDEAs to individual scenarios, if present
+  if ("SSPs" %in% scenario) {
+    scenario <- c(scenario[!grepl("SSPs", scenario)], c("SSP1", "SSP2", "SSP3", "SSP4", "SSP5"))
+  }
+  if ("SSP2IndiaDEAs" %in% scenario) {
+    scenario <- c(scenario[!grepl("SSP2IndiaDEAs", scenario)], c("SSP2IndiaMedium", "SSP2IndiaHigh"))
+  }
+
+  data <- readSource("EdgeBuildings", subtype = "Floorspace", subset = scenario)
 
   if (onlyTotal) {
     data <- collapseNames(data[, , "buildings"])

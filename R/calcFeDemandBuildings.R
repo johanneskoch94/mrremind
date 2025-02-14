@@ -3,16 +3,26 @@
 #' @param subtype either "FE", "FE_buildings", or "UE_buildings"
 #'
 #' @author Robin Hasse
-calcFeDemandBuildings <- function(subtype) {
+calcFeDemandBuildings <- function(subtype, scenario) {
 
   if (!subtype %in% c("FE", "FE_buildings", "UE_buildings")) {
     stop(paste0("Unsupported subtype: ", subtype))
   }
+  if (!all(scenario %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario)) {
+    stop(paste0("Unsupported scenario: ", scenario))
+  }
+
+  # Replace calls to SSPs and SSP2IndiaDEAs to individual scenarios, if present
+  if ("SSPs" %in% scenario) {
+    scenario <- c(scenario[!grepl("SSPs", scenario)], c("SSP1", "SSP2", "SSP3", "SSP4", "SSP5"))
+  }
+  if ("SSP2IndiaDEAs" %in% scenario) {
+    scenario <- c(scenario[!grepl("SSP2IndiaDEAs", scenario)], c("SSP2IndiaMedium", "SSP2IndiaHigh"))
+  }
 
   # Data Processing ----
-
-  stationary <- readSource("Stationary")
-  buildings  <- readSource("EdgeBuildings", subtype = "FE")
+  stationary <- readSource("Stationary", subset = scenario)
+  buildings  <- readSource("EdgeBuildings", subtype = "FE", subset = scenario)
 
   # all 2016 values are zero
   # TODO: remove filtering, as 2016 values are available now
@@ -22,24 +32,16 @@ calcFeDemandBuildings <- function(subtype) {
   buildings <- toolAggregateTimeSteps(buildings)
   stationary <- toolAggregateTimeSteps(stationary)
 
-  # add scenarios to stationary to match buildings scenarios by duplication
-  stationary <- mbind(stationary, setItems(stationary[, , "SSP2"], 3.1, "SSP2_NAV_all"))
-
   if (subtype == "FE") {
-
     # drop RCP dimension (use fixed RCP)
     buildings <- mselect(buildings, rcp = "none", collapseNames = TRUE)
 
   } else {
-
-    scens <- getItems(buildings, dim = "scenario")
-
     # For each scenario add the rcp scenarios present in buildings to stationary
-    stationary <- do.call(mbind, lapply(scens, function(scen) {
+    stationary <- do.call(mbind, lapply(scenario, function(scen) {
       rcps <- getItems(mselect(buildings, scenario = scen), dim = "rcp")
       toolAddDimensions(mselect(stationary, scenario = scen), dimVals = rcps, dimName = "rcp", dimCode = 3.2)
     }))
-
   }
 
   # extrapolate years missing in buildings, but existing in stationary

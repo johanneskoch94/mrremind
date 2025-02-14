@@ -16,6 +16,7 @@ fullREMIND <- function() {
   rem_years <- seq(2005, 2150, 5)
   rem_years_hist <- seq(1990, 2150, 5)
   gdpPopScen <- c("SSPs", "SSP2IndiaDEAs")
+  feDemScen <- c(gdpPopScen, "SSP2_lowEn", "SSP2_highDemDEU", "SSP2_NAV_all")
 
   #-------------- macro-economic parameters -----------------------------------------------------------
   calcOutput("Population", scenario = gdpPopScen, years = rem_years_hist, round = 8, file = "f_pop.cs3r")
@@ -57,13 +58,20 @@ fullREMIND <- function() {
                                   convert = FALSE) %>%
       quitte::madrat_mule()
   )
-  calcOutput("FEdemand", signif = 4,                                   file = "f_fedemand.cs4r")
-  calcOutput("FeDemandBuildings", subtype = "FE_buildings", round = 8, file = "f_fedemand_build.cs4r")
-  calcOutput("FeDemandBuildings", subtype = "UE_buildings", round = 8, file = "f36_uedemand_build.cs4r")
-
+  calcOutput("FEdemand", subtype = "FE", scenario = feDemScen, signif = 4, file = "f_fedemand.cs4r")
+  calcOutput("FeDemandBuildings",
+             subtype = "FE_buildings",
+             scenario = feDemScen,
+             round = 8,
+             file = "f_fedemand_build.cs4r")
+  calcOutput("FeDemandBuildings",
+             subtype = "UE_buildings",
+             scenario = feDemScen,
+             round = 8,
+             file = "f36_uedemand_build.cs4r")
   calcOutput("ChemicalFeedstocksShare",                     round = 2, file = "p37_chemicals_feedstock_share.cs4r")
-  calcOutput("Floorspace", onlyTotal = TRUE,                round = 1, file = "p36_floorspace_scen.cs4r")
-  calcOutput("Floorspace",                                  round = 1, file = "f36_floorspace_scen.cs4r")
+  calcOutput("Floorspace", scenario = feDemScen, onlyTotal = TRUE, round = 1, file = "p36_floorspace_scen.cs4r")
+  calcOutput("Floorspace", scenario = feDemScen,            round = 1, file = "f36_floorspace_scen.cs4r")
   calcOutput("WeightNash",                                  round = 6, file = "p80_eoWeights_fix.cs4r")
   calcOutput("IntertempElastSubst",                         round = 6, file = "pm_ies.cs4r")
   calcOutput("TimePref",                                    round = 6, file = "p23_prtp.cs4r")

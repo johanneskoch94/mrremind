@@ -3,8 +3,12 @@
 #' @author Falk Benke
 calcFEdemand <- function(scenario) {
 
-  feBuildings <- calcOutput("FeDemandBuildings", subtype = "FE", warnNA = FALSE, aggregate = FALSE)
-  feIndustry <- calcOutput("FeDemandIndustry", scenario = scenario, warnNA = FALSE, aggregate = FALSE)
+  feBuildings <- calcOutput("FeDemandBuildings",
+                            subtype = "FE",
+                            scenario = scenario,
+                            warnNA = FALSE,
+                            aggregate = FALSE)
+  feIndustry <- calcOutput("FeDemandIndustry", scenario = c("SSPs", "SSP2IndiaDEAs"), warnNA = FALSE, aggregate = FALSE)
 
   # duplicate scenarios ----
   # add Navigate and Campaigners scenarios to industry and transport to match buildings scenarios by duplication
