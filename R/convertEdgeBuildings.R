@@ -48,7 +48,8 @@ convertEdgeBuildings <- function(x, subtype, subset) {
     gdpScen <- subset[subset %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario]
     wg <- calcOutput("GDP", scenario = unique(c("SSP2", gdpScen)), average2020 = FALSE, aggregate = FALSE)
     ## For scenarios for which no specific GDP data exists, use SSP2 data.
-    wg <- purrr::map(subset[!subset %in% gdpScen], setItems(wg[, , "SSP2"], 3, .x)) %>% mbind()
+    wgAdd <- purrr::map(subset[!subset %in% gdpScen], ~setItems(wg[, , "SSP2"], 3, .x)) %>% mbind()
+    wg <- mbind(wg, wgAdd)
 
     #--- Then load the final energy data
     hist_fe_stationary <- calcOutput("IOEdgeBuildings", subtype = "output_EDGE", aggregate = FALSE)
@@ -147,7 +148,8 @@ convertEdgeBuildings <- function(x, subtype, subset) {
                      years = rem_years_hist,
                      aggregate = FALSE)
     ## For scenarios for which no specific Population data exists, use SSP2 data.
-    wp <- purrr::map(subset[!subset %in% popScen], setItems(wp[, , "SSP2"], 3, .x)) %>% mbind()
+    wpAdd <- purrr::map(subset[!subset %in% popScen], setItems(wp[, , "SSP2"], 3, .x)) %>% mbind()
+    wp <- mbind(wp, wpAdd)
     getSets(wp) <- gsub("variable", "scenario", getSets(wp))
 
     x <- time_interpolate(x, interpolated_year = rem_years_hist, extrapolation_type = "constant")
