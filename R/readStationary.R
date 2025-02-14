@@ -57,13 +57,13 @@ convertStationary <- function(x) {
   getSets(x) <- c("region", "year", "scenario", "item")
   scenarios <- list(SSPs  = paste0("SSP", 1:5),
                     SSP2s = paste0("SSP2", c("_lowEn", "_NAV_all", "IndiaMedium", "IndiaHigh")))
-  x <- purrr::map(scenarios$SSP2s,
-                  ~ add_dimension(mselect(x, scenario = "SSP2", collapseNames = TRUE),
-                                  dim = 3.1,
-                                  add = "scenario",
-                                  nm = .x)) %>%
-    mbind(x)
-  x <- mselect(x, scenario = Reduce(c, scenarios))
+  xAdd <- purrr::map(scenarios$SSP2s,
+                     ~ add_dimension(mselect(x, scenario = "SSP2", collapseNames = TRUE),
+                                     dim = 3.1,
+                                     add = "scenario",
+                                     nm = .x)) %>%
+    mbind()
+  x <- mbind(x, xAdd) %>% mselect(scenario = Reduce(c, scenarios))
 
 
   #---- Explanations
