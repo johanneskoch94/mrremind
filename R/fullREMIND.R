@@ -49,7 +49,7 @@ fullREMIND <- function() {
   calcOutput("ExogDemScen",                           round = 8,  file = "p47_exogDemScen.cs4r")
   calcOutput(
     type = "Steel_Projections",
-    scenarios = feDemScen,
+    scenarios = gdpPopScen,
     subtype = "secondary.steel.max.share",
     file = "p37_steel_secondary_max_share.cs4r",
     match.steel.historic.values = TRUE,
